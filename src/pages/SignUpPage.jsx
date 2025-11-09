@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { GoogleLogin } from "@react-oauth/google"
-import { useLearner } from "../context/LearnerContext"
+import { UseLearner } from "../context/LearnerContext"
 import Input from "../components/common/Input"
 import Button from "../components/common/Button"
 
@@ -11,7 +11,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const { signup, loginWithGoogle, isAuthenticated } = useLearner()
+  const { signup, loginWithGoogle, isAuthenticated } = UseLearner()
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 

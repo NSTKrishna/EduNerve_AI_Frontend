@@ -1,8 +1,8 @@
-import { Navigate } from "react-router-dom"
-import { useLearner } from "../context/LearnerContext"
+import { Navigate } from "react-router-dom";
+import { UseLearner } from "../context/LearnerContext";
 
 export default function PrivateRoute({ children }) {
-  const { isAuthenticated, loading } = useLearner()
+  const { isAuthenticated, loading } = UseLearner();
 
   // Show nothing while checking authentication
   if (loading) {
@@ -13,12 +13,12 @@ export default function PrivateRoute({ children }) {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  return children
+  return children;
 }

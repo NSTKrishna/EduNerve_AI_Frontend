@@ -1,11 +1,11 @@
-import { useLearner } from "../context/LearnerContext"
+import { UseLearner } from "../context/LearnerContext"
 import { content } from "../data/mockData"
 import { Link, useParams } from "react-router-dom"
 import Button from "../components/common/Button"
 
 export default function LearningPage() {
   const { topic } = useParams()
-  const { learnerProfile, completeModule } = useLearner()
+  const { learnerProfile, completeModule } = UseLearner()
 
   if (topic) {
     const topicContent = content[topic]

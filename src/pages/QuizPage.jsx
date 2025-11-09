@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 
 import Navbar from "../components/layout/Navbar"
 import Button from "../components/common/Button"
-import { useLearner } from "../context/LearnerContext"
+import { UseLearner } from "../context/LearnerContext"
 import { content } from "../data/mockData"
 
 const performanceLevels = [
@@ -16,7 +16,7 @@ const performanceLevels = [
 export default function QuizPage() {
   const navigate = useNavigate()
   const { topic } = useParams()
-  const { completeQuiz, learnerProfile } = useLearner()
+  const { completeQuiz, learnerProfile } = UseLearner()
 
   const topicContent = content[topic]
   const questions = topicContent?.quiz?.questions ?? []

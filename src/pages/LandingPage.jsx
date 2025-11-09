@@ -1,67 +1,89 @@
-import { useEffect, useState, useRef } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { useLearner } from "../context/LearnerContext"
-import Button from "../components/common/Button"
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../components/ui/card"
-import { ArrowRight, BookOpen, MessageSquare, GraduationCap, CheckCircle2 } from "lucide-react"
-import { resourcesAPI } from "../lib/api"
+import { useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { UseLearner } from "../context/LearnerContext";
+import Button from "../components/common/Button";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "../components/ui/card";
+import {
+  ArrowRight,
+  BookOpen,
+  MessageSquare,
+  GraduationCap,
+  CheckCircle2,
+} from "lucide-react";
+import { resourcesAPI } from "../lib/api";
 
 export default function LandingPage() {
-  const navigate = useNavigate()
-  const { isAuthenticated, learnerProfile, authUser, logout } = useLearner()
-  const [resources, setResources] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const dropdownRef = useRef(null)
+  const navigate = useNavigate();
+  const { isAuthenticated, learnerProfile, authUser, logout } = UseLearner();
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchResources = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const res = await resourcesAPI.getResources()
-        const data = Array.isArray(res) ? res : res?.data || res?.resources || []
-        setResources(data.slice(0, 6))
+        const res = await resourcesAPI.getResources();
+        const data = Array.isArray(res)
+          ? res
+          : res?.data || res?.resources || [];
+        setResources(data.slice(0, 6));
       } catch (err) {
-        console.error("Failed to load resources:", err)
+        console.error("Failed to load resources:", err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchResources()
-  }, [])
+    };
+    fetchResources();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false)
+        setShowDropdown(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
-    logout()
-    setShowDropdown(false)
-    navigate("/")
-  }
+    logout();
+    setShowDropdown(false);
+    navigate("/");
+  };
 
-  const userAvatar = authUser?.picture || learnerProfile?.avatar
-  const userName = learnerProfile?.name || authUser?.name || "User"
-  const userInitials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+  const userAvatar = authUser?.picture || learnerProfile?.avatar;
+  const userName = learnerProfile?.name || authUser?.name || "User";
+  const userInitials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <div className="min-h-screen flex flex-col">
-
       <header className="border-b border-border bg-card px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold text-primary">EduNerve AI</Link>
+          <Link to="/" className="text-2xl font-bold text-primary">
+            EduNerve AI
+          </Link>
           <div className="flex items-center gap-3">
             {!isAuthenticated ? (
               <>
-                <Button onClick={() => navigate('/login')} variant="ghost">Log in</Button>
-                <Button onClick={() => navigate('/signup')}>Get started</Button>
+                <Button onClick={() => navigate("/login")} variant="ghost">
+                  Log in
+                </Button>
+                <Button onClick={() => navigate("/signup")}>Get started</Button>
               </>
             ) : (
               <div className="relative" ref={dropdownRef}>
@@ -69,7 +91,9 @@ export default function LandingPage() {
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
                 >
-                  <span className="text-sm text-muted-foreground hidden sm:block">{userName}</span>
+                  <span className="text-sm text-muted-foreground hidden sm:block">
+                    {userName}
+                  </span>
                   {userAvatar ? (
                     <img
                       src={userAvatar}
@@ -86,13 +110,17 @@ export default function LandingPage() {
                 {showDropdown && (
                   <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
                     <div className="px-4 py-2 border-b border-border">
-                      <p className="text-sm font-medium text-foreground">{userName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{learnerProfile?.email || authUser?.email}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {userName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {learnerProfile?.email || authUser?.email}
+                      </p>
                     </div>
                     <button
                       onClick={() => {
-                        setShowDropdown(false)
-                        navigate("/dashboard")
+                        setShowDropdown(false);
+                        navigate("/dashboard");
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors cursor-pointer"
                     >
@@ -109,8 +137,8 @@ export default function LandingPage() {
               </div>
             )}
           </div>
-        </div> 
-      </header>     
+        </div>
+      </header>
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-6">
@@ -124,41 +152,48 @@ export default function LandingPage() {
               place.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button 
-                size="lg" 
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/signup')}
+              <Button
+                size="lg"
+                onClick={() =>
+                  navigate(isAuthenticated ? "/dashboard" : "/signup")
+                }
               >
-                {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
+                {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
                 {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => navigate('/quizzes')}
+                onClick={() => navigate("/quizzes")}
               >
                 Try a Quiz
               </Button>
             </div>
-          </div> 
+          </div>
         </div>
       </section>
-
 
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Learning Resources</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Access curated study materials, tutorials, and resources to accelerate your learning journey.
+              Access curated study materials, tutorials, and resources to
+              accelerate your learning journey.
             </p>
           </div>
-          
+
           {loading ? (
-            <div className="text-center text-muted-foreground">Loading resources...</div>
+            <div className="text-center text-muted-foreground">
+              Loading resources...
+            </div>
           ) : resources.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {resources.slice(0, 6).map((resource) => (
-                <Card key={resource.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card
+                  key={resource.id}
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <CardHeader>
                     <CardTitle className="text-lg">{resource.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
@@ -178,7 +213,7 @@ export default function LandingPage() {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => window.open(resource.url, '_blank')}
+                      onClick={() => window.open(resource.url, "_blank")}
                     >
                       View Resource
                     </Button>
@@ -193,7 +228,6 @@ export default function LandingPage() {
           )}
         </div>
       </section>
-
 
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
@@ -227,9 +261,11 @@ export default function LandingPage() {
                 <Button
                   // variant="ghost"
                   className="w-full bg-primary text-primary-foreground"
-                  onClick={() => navigate(isAuthenticated ? '/quizzes' : '/signup')}
+                  onClick={() =>
+                    navigate(isAuthenticated ? "/quizzes" : "/signup")
+                  }
                 >
-                  {isAuthenticated ? 'Start Quiz' : 'View More'}
+                  {isAuthenticated ? "Start Quiz" : "View More"}
                   {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
                 </Button>
               </CardContent>
@@ -266,9 +302,11 @@ export default function LandingPage() {
                 <Button
                   // variant="ghost"
                   className="w-full bg-primary text-primary-foreground"
-                  onClick={() => navigate(isAuthenticated ? '/interviews' : '/signup')}
+                  onClick={() =>
+                    navigate(isAuthenticated ? "/interviews" : "/signup")
+                  }
                 >
-                  {isAuthenticated ? 'Start Interview' : 'View More'}
+                  {isAuthenticated ? "Start Interview" : "View More"}
                   {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
                 </Button>
               </CardContent>
@@ -303,9 +341,9 @@ export default function LandingPage() {
                 <Button
                   // variant="ghost"
                   className="w-full bg-primary text-primary-foreground"
-                  onClick={() => navigate(isAuthenticated ? '/lms' : '/signup')}
+                  onClick={() => navigate(isAuthenticated ? "/lms" : "/signup")}
                 >
-                  {isAuthenticated ? 'Browse Courses' : 'View More'}
+                  {isAuthenticated ? "Browse Courses" : "View More"}
                   {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
                 </Button>
               </CardContent>
@@ -330,10 +368,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-
       <footer className="border-t border-border bg-card px-6 py-8">
         <div className="max-w-7xl mx-auto text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} EduNerve AI. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} EduNerve AI. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

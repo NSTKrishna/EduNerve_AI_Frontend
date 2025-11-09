@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import Vapi from "@vapi-ai/web";
-import { useLearner } from "../context/LearnerContext";
+import { UseLearner } from "../context/LearnerContext";
 import "../App.css";
 
 function Interview() {
-  const { learnerProfile, refreshProfile } = useLearner();
+  const { learnerProfile, refreshProfile } = UseLearner();
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState(
     "Fill out the form to start your personalized mock interview"
@@ -18,13 +18,13 @@ function Interview() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const transcriptEndRef = useRef(null);
-  const timerIntervalRef = useRef(null); 
+  const timerIntervalRef = useRef(null);
 
   const [formData, setFormData] = useState({
     userId: learnerProfile?.id || `user_${Date.now()}`,
     role: learnerProfile?.role || "",
     interviewType: "mixed",
-    technologies: learnerProfile?.skills || [], 
+    technologies: learnerProfile?.skills || [],
   });
   useEffect(() => {
     if (learnerProfile) {
@@ -212,25 +212,23 @@ function Interview() {
         tokenPreview: token?.substring(0, 20) + "...",
         allLocalStorage: Object.keys(localStorage),
       });
- 
+
       if (!token) {
         setStatus("Authentication token not found. Please log in again.");
-        setIsLoading(false);   
-        return; 
+        setIsLoading(false);
+        return;
       }
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-      const res = await fetch(
-        `${API_URL}/interview/start-interview`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const API_URL =
+        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+      const res = await fetch(`${API_URL}/interview/start-interview`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
 
       let data;
       try {
@@ -299,26 +297,23 @@ function Interview() {
           timerIntervalRef.current = null;
         }
 
-
         if (interviewId && transcript.length > 0) {
           try {
             setStatus("Saving interview data and generating feedback...");
-            const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-            const response = await fetch(
-              `${API_URL}/interview/complete`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-                },
-                body: JSON.stringify({
-                  interviewId,
-                  transcript,
-                  duration: callDuration,
-                }),
-              }
-            );
+            const API_URL =
+              import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+            const response = await fetch(`${API_URL}/interview/complete`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              },
+              body: JSON.stringify({
+                interviewId,
+                transcript,
+                duration: callDuration,
+              }),
+            });
 
             const data = await response.json();
             if (data.success) {
@@ -327,7 +322,9 @@ function Interview() {
                 "Interview completed successfully! Check your dashboard for detailed feedback."
               );
             } else {
-              setStatus("Mock interview completed. Feedback generation failed.");
+              setStatus(
+                "Mock interview completed. Feedback generation failed."
+              );
             }
           } catch (error) {
             console.error("Error saving interview:", error);
@@ -424,22 +421,20 @@ function Interview() {
     if (interviewId && transcript.length > 0) {
       try {
         setStatus("Saving interview data and generating feedback...");
-        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-        const response = await fetch(
-          `${API_URL}/interview/complete`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-            body: JSON.stringify({
-              interviewId,
-              transcript,
-              duration: callDuration,
-            }),
-          }
-        );
+        const API_URL =
+          import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+        const response = await fetch(`${API_URL}/interview/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+          body: JSON.stringify({
+            interviewId,
+            transcript,
+            duration: callDuration,
+          }),
+        });
 
         const data = await response.json();
         if (data.success) {

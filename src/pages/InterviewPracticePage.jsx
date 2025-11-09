@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
-import { useLearner } from "../context/LearnerContext"
+import { UseLearner } from "../context/LearnerContext"
 import { content } from "../data/mockData"
 import Button from "../components/common/Button"
 
 export default function InterviewPracticePage() {
   const { topic } = useParams()
   const navigate = useNavigate()
-  const { practiceInterview } = useLearner()
+  const { practiceInterview } = UseLearner()
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [responses, setResponses] = useState({})
   const [showComplete, setShowComplete] = useState(false)

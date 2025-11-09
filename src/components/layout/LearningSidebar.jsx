@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom"
 import { LayoutDashboard, BookOpen } from "lucide-react"
-import { useLearner } from "../../context/LearnerContext"
+import { UseLearner } from "../../context/LearnerContext"
 import Button from "../common/Button"
 
 const links = [
@@ -10,7 +10,7 @@ const links = [
 
 export default function LearningSidebar({ open = false, onClose }) {
   const location = useLocation()
-  const { learnerProfile, logout } = useLearner()
+  const { learnerProfile, logout } = UseLearner()
 
   const displayName = learnerProfile?.name || "Alex Smith"
   const displayField = learnerProfile?.field || "Computer Science"

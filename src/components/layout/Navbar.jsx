@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom"
 import { useState, useRef, useEffect } from "react"
-import { useLearner } from "../../context/LearnerContext"
+import { UseLearner } from "../../context/LearnerContext"
 
 export default function Navbar() {
-  const { isAuthenticated, learnerProfile, authUser, logout } = useLearner()
+  const { isAuthenticated, learnerProfile, authUser, logout } = UseLearner()
   const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef(null)

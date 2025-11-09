@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useLearner } from "../../context/LearnerContext"
+import { UseLearner } from "../../context/LearnerContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import Button from "../common/Button"
 import {
@@ -17,7 +17,7 @@ import {
 import { TrendingUp, Award, BookOpen, MessageSquare } from "lucide-react"
 
 export function OverviewContent() {
-  const { learnerProfile } = useLearner()
+  const { learnerProfile } = UseLearner()
   const [stats, setStats] = useState({
     totalQuizzes: 0,
     avgScore: 0,

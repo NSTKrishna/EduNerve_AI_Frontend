@@ -1,7 +1,7 @@
-import { useLearner } from "../../context/LearnerContext"
+import { UseLearner } from "../../context/LearnerContext"
 
 export default function StatsOverview() {
-  const { learnerProfile } = useLearner()
+  const { learnerProfile } = UseLearner()
 
   const stats = [
     {
