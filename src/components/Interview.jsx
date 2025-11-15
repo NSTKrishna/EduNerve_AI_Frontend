@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import Vapi from "@vapi-ai/web";
 import { useLearner } from "../context/LearnerContext";
-import Navbar from "./layout/Navbar";
 import "../App.css";
 
 function Interview() {
-  const { learnerProfile } = useLearner();
+  const { learnerProfile, refreshProfile } = useLearner();
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState(
     "Fill out the form to start your personalized mock interview"
@@ -19,7 +18,7 @@ function Interview() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const transcriptEndRef = useRef(null);
-  const timerIntervalRef = useRef(null);
+  const timerIntervalRef = useRef(null); 
 
   const [formData, setFormData] = useState({
     userId: learnerProfile?.id || `user_${Date.now()}`,
@@ -292,13 +291,50 @@ function Interview() {
         timerIntervalRef.current = interval;
       });
 
-      vapi.on("call-end", () => {
+      vapi.on("call-end", async () => {
         setIsConnected(false);
-        setStatus("Mock interview completed. Great job!");
         setIsSpeaking(false);
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current);
           timerIntervalRef.current = null;
+        }
+
+
+        if (interviewId && transcript.length > 0) {
+          try {
+            setStatus("Saving interview data and generating feedback...");
+            const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+            const response = await fetch(
+              `${API_URL}/interview/complete`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+                },
+                body: JSON.stringify({
+                  interviewId,
+                  transcript,
+                  duration: callDuration,
+                }),
+              }
+            );
+
+            const data = await response.json();
+            if (data.success) {
+              await refreshProfile(); // Refresh profile to update dashboard
+              setStatus(
+                "Interview completed successfully! Check your dashboard for detailed feedback."
+              );
+            } else {
+              setStatus("Mock interview completed. Feedback generation failed.");
+            }
+          } catch (error) {
+            console.error("Error saving interview:", error);
+            setStatus("Mock interview completed. Could not save feedback.");
+          }
+        } else {
+          setStatus("Mock interview completed. Great job!");
         }
       });
 
@@ -407,6 +443,7 @@ function Interview() {
 
         const data = await response.json();
         if (data.success) {
+          await refreshProfile(); // Refresh profile to update dashboard
           setStatus(
             "Interview completed successfully! Check your dashboard for detailed feedback."
           );
@@ -457,7 +494,6 @@ function Interview() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       <div
         className="App"
         style={{ padding: 20, maxWidth: "1200px", margin: "0 auto" }}

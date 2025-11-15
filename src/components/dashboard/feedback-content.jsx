@@ -1,124 +1,69 @@
-import { useMemo } from "react"
-import { useLearner } from "@/context/LearnerContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, ThumbsUp, Clock, CheckCircle2, TrendingUp, Award } from "lucide-react"
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-} from "recharts"
+import { Button } from "@/components/ui/button"
+import { MessageSquare, ThumbsUp, Clock, CheckCircle2 } from "lucide-react"
+
+const interviewResults = [
+  {
+    id: 1,
+    title: "Technical Interview - Data Structures",
+    date: "June 15, 2024",
+    interviewer: "Dr. Sarah Johnson",
+    rating: "Excellent",
+    score: 92,
+    feedback:
+      "Demonstrated exceptional understanding of data structures and algorithms. Problem-solving approach was methodical and efficient. Strong communication throughout the session.",
+    strengths: ["Algorithm optimization", "Clear communication", "Time complexity analysis"],
+    improvements: ["Edge case handling", "Code documentation"],
+    status: "completed",
+  },
+  {
+    id: 2,
+    title: "Behavioral Interview - Team Collaboration",
+    date: "June 10, 2024",
+    interviewer: "Prof. Michael Chen",
+    rating: "Good",
+    score: 85,
+    feedback:
+      "Good examples of teamwork and leadership. Could provide more specific metrics and outcomes in responses. Overall positive performance.",
+    strengths: ["Leadership examples", "Conflict resolution", "Active listening"],
+    improvements: ["Quantifiable results", "More diverse examples"],
+    status: "completed",
+  },
+  {
+    id: 3,
+    title: "System Design - Scalability",
+    date: "June 5, 2024",
+    interviewer: "Dr. Emily Rodriguez",
+    rating: "Very Good",
+    score: 88,
+    feedback:
+      "Solid understanding of distributed systems and scalability patterns. Good trade-off analysis between different architectural approaches.",
+    strengths: ["System architecture", "Trade-off analysis", "Scalability concepts"],
+    improvements: ["Database sharding", "Caching strategies"],
+    status: "completed",
+  },
+  {
+    id: 4,
+    title: "Mock Interview - Frontend Development",
+    date: "June 20, 2024",
+    interviewer: "Dr. James Wilson",
+    rating: "Pending",
+    score: 0,
+    feedback: "Feedback will be available within 48 hours.",
+    strengths: [],
+    improvements: [],
+    status: "pending",
+  },
+]
 
 export function FeedbackContent() {
-  const { learnerProfile } = useLearner()
-
-  const stats = useMemo(() => {
-    const interviews = learnerProfile?.interviewsPracticed || []
-    const quizzes = learnerProfile?.quizAttempts || []
-    
-    const totalInterviews = interviews.length
-    const completedInterviews = interviews.filter(i => i.status === "completed").length
-    const pendingInterviews = interviews.filter(i => i.status === "in-progress" || i.status === "pending").length
-    
-    const interviewsWithScores = interviews.filter(i => i.overallScore)
-    const avgInterviewScore = interviewsWithScores.length > 0
-      ? Math.round(interviewsWithScores.reduce((sum, i) => sum + (i.overallScore || 0), 0) / interviewsWithScores.length)
-      : 0
-
-    const avgQuizScore = quizzes.length > 0
-      ? Math.round(quizzes.reduce((sum, q) => sum + (q.percentage || 0), 0) / quizzes.length)
-      : 0
-
-    return {
-      totalInterviews,
-      completedInterviews,
-      pendingInterviews,
-      avgInterviewScore,
-      avgQuizScore,
-      totalQuizzes: quizzes.length,
-    }
-  }, [learnerProfile])
-
-  // Performance over time data
-  const performanceData = useMemo(() => {
-    const interviews = learnerProfile?.interviewsPracticed || []
-    return interviews
-      .filter(i => i.status === "completed" && i.overallScore)
-      .sort((a, b) => new Date(a.completedAt || a.startedAt) - new Date(b.completedAt || b.startedAt))
-      .slice(-10)
-      .map((interview, index) => ({
-        name: `Session ${index + 1}`,
-        score: interview.overallScore,
-        date: new Date(interview.completedAt || interview.startedAt).toLocaleDateString(),
-      }))
-  }, [learnerProfile])
-
-  // Skills breakdown radar
-  const skillsRadarData = useMemo(() => {
-    const interviews = learnerProfile?.interviewsPracticed || []
-    const completedWithScores = interviews.filter(i => 
-      i.status === 'completed' && (i.technicalScore || i.communicationScore || i.problemSolvingScore)
-    )
-
-    if (completedWithScores.length === 0) return []
-
-    const avgTechnical = completedWithScores.reduce((sum, i) => sum + (i.technicalScore || 0), 0) / completedWithScores.length
-    const avgCommunication = completedWithScores.reduce((sum, i) => sum + (i.communicationScore || 0), 0) / completedWithScores.length
-    const avgProblemSolving = completedWithScores.reduce((sum, i) => sum + (i.problemSolvingScore || 0), 0) / completedWithScores.length
-
-    return [
-      { skill: 'Technical', score: Math.round(avgTechnical) },
-      { skill: 'Communication', score: Math.round(avgCommunication) },
-      { skill: 'Problem Solving', score: Math.round(avgProblemSolving) },
-    ]
-  }, [learnerProfile])
-
-  // Quiz vs Interview comparison
-  const comparisonData = useMemo(() => {
-    const quizzes = learnerProfile?.quizAttempts || []
-    const interviews = learnerProfile?.interviewsPracticed || []
-
-    const quizzesByWeek = {}
-    const interviewsByWeek = {}
-
-    quizzes.forEach(quiz => {
-      const week = new Date(quiz.createdAt || Date.now()).toISOString().split('T')[0].slice(0, 7)
-      if (!quizzesByWeek[week]) quizzesByWeek[week] = []
-      quizzesByWeek[week].push(quiz.percentage || 0)
-    })
-
-    interviews.filter(i => i.overallScore).forEach(interview => {
-      const week = new Date(interview.completedAt || interview.startedAt || Date.now()).toISOString().split('T')[0].slice(0, 7)
-      if (!interviewsByWeek[week]) interviewsByWeek[week] = []
-      interviewsByWeek[week].push(interview.overallScore)
-    })
-
-    const allWeeks = new Set([...Object.keys(quizzesByWeek), ...Object.keys(interviewsByWeek)])
-    
-    return Array.from(allWeeks).sort().slice(-6).map(week => ({
-      month: new Date(week + '-01').toLocaleDateString('en-US', { month: 'short' }),
-      quizAvg: quizzesByWeek[week] ? Math.round(quizzesByWeek[week].reduce((a, b) => a + b, 0) / quizzesByWeek[week].length) : null,
-      interviewAvg: interviewsByWeek[week] ? Math.round(interviewsByWeek[week].reduce((a, b) => a + b, 0) / interviewsByWeek[week].length) : null,
-    }))
-  }, [learnerProfile])
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Performance Analytics</h1>
-        <p className="text-muted-foreground mt-1">Deep dive into your learning progress and achievements</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Feedback & Results</h1>
+        <p className="text-muted-foreground mt-1">Review your interview feedback and performance insights</p>
       </div>
 
       {/* Summary Stats */}
@@ -131,7 +76,7 @@ export function FeedbackContent() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Interviews</p>
-                <p className="text-2xl font-bold text-foreground">{stats.totalInterviews}</p>
+                <p className="text-2xl font-bold text-foreground">12</p>
               </div>
             </div>
           </CardContent>
@@ -139,12 +84,12 @@ export function FeedbackContent() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                <CheckCircle2 className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-foreground">{stats.completedInterviews}</p>
+                <p className="text-2xl font-bold text-foreground">9</p>
               </div>
             </div>
           </CardContent>
@@ -152,12 +97,12 @@ export function FeedbackContent() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                <Award className="h-5 w-5 text-blue-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/10">
+                <Clock className="h-5 w-5 text-chart-3" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Quiz Attempts</p>
-                <p className="text-2xl font-bold text-foreground">{stats.totalQuizzes}</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold text-foreground">3</p>
               </div>
             </div>
           </CardContent>
@@ -165,143 +110,102 @@ export function FeedbackContent() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-                <ThumbsUp className="h-5 w-5 text-purple-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chart-4/10">
+                <ThumbsUp className="h-5 w-5 text-chart-4" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Avg. Score</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {stats.avgInterviewScore > 0 ? `${stats.avgInterviewScore}%` : 'N/A'}
-                </p>
+                <p className="text-2xl font-bold text-foreground">87%</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Analytics Charts */}
-      {stats.completedInterviews > 0 || stats.totalQuizzes > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Interview Performance Trend */}
-          {performanceData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Interview Performance Trend
-                </CardTitle>
-                <CardDescription>Your progress over recent interview sessions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="name" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      name="Score %"
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+      {/* Interview Results */}
+      <div className="space-y-4">
+        {interviewResults.map((result) => (
+          <Card key={result.id}>
+            <CardHeader>
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">{result.title}</CardTitle>
+                  <CardDescription>
+                    <span className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4" />
+                      {result.date} • Interviewer: {result.interviewer}
+                    </span>
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  {result.status === "completed" && (
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Score</p>
+                      <p className="text-2xl font-bold text-foreground">{result.score}%</p>
+                    </div>
+                  )}
+                  <Badge
+                    variant={result.status === "pending" ? "secondary" : result.score >= 90 ? "default" : "outline"}
+                    className="h-fit"
+                  >
+                    {result.rating}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Feedback */}
+              <div>
+                <h4 className="font-semibold text-foreground mb-2">Overall Feedback</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{result.feedback}</p>
+              </div>
 
-          {/* Skills Radar */}
-          {skillsRadarData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Skills Assessment
-                </CardTitle>
-                <CardDescription>Average scores across key competencies</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RadarChart data={skillsRadarData}>
-                    <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis dataKey="skill" className="text-xs" />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} className="text-xs" />
-                    <Radar
-                      name="Skills"
-                      dataKey="score"
-                      stroke="#8b5cf6"
-                      fill="#8b5cf6"
-                      fillOpacity={0.6}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+              {/* Strengths and Improvements */}
+              {result.status === "completed" && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <ThumbsUp className="h-4 w-4 text-accent" />
+                      Strengths
+                    </h4>
+                    <ul className="space-y-1">
+                      {result.strengths.map((strength, index) => (
+                        <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-accent mt-1">•</span>
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      Areas for Improvement
+                    </h4>
+                    <ul className="space-y-1">
+                      {result.improvements.map((improvement, index) => (
+                        <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          {improvement}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
 
-          {/* Quiz vs Interview Comparison */}
-          {comparisonData.length > 0 && (
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Quiz vs Interview Performance
-                </CardTitle>
-                <CardDescription>Comparative analysis of your performance across different assessment types</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="month" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="quizAvg" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Quiz Avg %" />
-                    <Bar dataKey="interviewAvg" fill="#10b981" radius={[8, 8, 0, 0]} name="Interview Avg %" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Clock className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              No Performance Data Yet
-            </h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              Complete some quizzes or interviews to see your detailed performance analytics and insights.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+              {/* Action Button */}
+              {result.status === "completed" && (
+                <div className="pt-2">
+                  <Button variant="outline" size="sm">
+                    View Detailed Report
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }
