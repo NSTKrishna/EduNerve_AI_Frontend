@@ -8,8 +8,6 @@ import DashboardPage from "./pages/DashboardPage"
 import QuizHubPage from "./pages/QuizHubPage"
 import InterviewPage from "./pages/InterviewPage"
 import NotFoundPage from "./pages/NotFoundPage"
-import ContinueLearningPage from "./pages/ContinueLearningPage"
-
 export default function App() {
   return (
     <LearnerProvider>
@@ -24,22 +22,6 @@ export default function App() {
               element={
                 <PrivateRoute>
                   <DashboardPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/learning"
-              element={
-                <PrivateRoute>
-                  <LmsHubPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/lms"
-              element={
-                <PrivateRoute>
-                  <LmsHubPage />
                 </PrivateRoute>
               }
             />
@@ -60,15 +42,6 @@ export default function App() {
               }
             />
 
-            {/* Projects placeholder */}
-            <Route
-              path="/projects"
-              element={
-                <PrivateRoute>
-                  <ProjectsPage />
-                </PrivateRoute>
-              }
-            />
 
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
