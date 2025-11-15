@@ -3,32 +3,14 @@ import { Link, useNavigate } from "react-router-dom"
 import { useLearner } from "../context/LearnerContext"
 import Button from "../components/common/Button"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../components/ui/card"
-import { ArrowRight, BookOpen, MessageSquare, GraduationCap, CheckCircle2 } from "lucide-react"
-import { resourcesAPI } from "../lib/api"
+import { ArrowRight, BookOpen, MessageSquare, CheckCircle2 } from "lucide-react"
 
 export default function LandingPage() {
   const navigate = useNavigate()
   const { isAuthenticated, learnerProfile, authUser, logout } = useLearner()
-  const [resources, setResources] = useState([])
-  const [loading, setLoading] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef(null)
 
-  useEffect(() => {
-    const fetchResources = async () => {
-      setLoading(true)
-      try {
-        const res = await resourcesAPI.getResources()
-        const data = Array.isArray(res) ? res : res?.data || res?.resources || []
-        setResources(data.slice(0, 6))
-      } catch (err) {
-        console.error("Failed to load resources:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchResources()
-  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -143,61 +125,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Learning Resources</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Access curated study materials, tutorials, and resources to accelerate your learning journey.
-            </p>
-          </div>
-          
-          {loading ? (
-            <div className="text-center text-muted-foreground">Loading resources...</div>
-          ) : resources.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {resources.slice(0, 6).map((resource) => (
-                <Card key={resource.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{resource.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {resource.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      <span className="bg-primary/10 text-primary px-2 py-1 rounded">
-                        {resource.type}
-                      </span>
-                      <span className="bg-muted px-2 py-1 rounded">
-                        {resource.topic}
-                      </span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => window.open(resource.url, '_blank')}
-                    >
-                      View Resource
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-muted-foreground">
-              No resources available at the moment.
-            </div>
-          )}
-        </div>
-      </section>
-
-
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer">
               <CardHeader>
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -273,63 +203,9 @@ export default function LandingPage() {
                 </Button>
               </CardContent>
             </Card>
-
-            <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <GraduationCap className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">Learning Management</CardTitle>
-                <CardDescription className="text-base leading-relaxed">
-                  Structured courses with progress tracking and personalized
-                  learning paths.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 mb-6">
-                  <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Comprehensive course library
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Progress tracking & analytics
-                  </li>
-                  <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Personalized recommendations
-                  </li>
-                </ul>
-                <Button
-                  // variant="ghost"
-                  className="w-full bg-primary text-primary-foreground"
-                  onClick={() => navigate(isAuthenticated ? '/lms' : '/signup')}
-                >
-                  {isAuthenticated ? 'Browse Courses' : 'View More'}
-                  {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-4xl text-center space-y-6">
-          <h2 className="text-4xl sm:text-5xl font-bold text-balance">
-            Ready to accelerate your learning?
-          </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            Join thousands of learners who are already mastering new skills with
-            our platform.
-          </p>
-          <Button size="lg" className="text-base">
-            Start Learning Today
-            {/* <ArrowRight className="ml-2 h-4 w-4" /> */}
-          </Button>
-        </div>
-      </section>
-
 
       <footer className="border-t border-border bg-card px-6 py-8">
         <div className="max-w-7xl mx-auto text-center text-muted-foreground">

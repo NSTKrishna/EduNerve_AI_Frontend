@@ -82,22 +82,6 @@ export const interviewAPI = {
 }
 
 
-export const quizAPI = {
-  generateQuiz: async (topic, difficulty, numberOfQuestions) => {
-    return fetchWithAuth(`${API_URL}/quiz/generate-quiz`, {
-      method: "POST",
-      body: JSON.stringify({ topic, difficulty, numberOfQuestions }),
-    })
-  },
-
-  saveQuizResult: async (data) => {
-    return fetchWithAuth(`${API_URL}/quiz/save-quiz-result`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  },
-}
-
 export const resourcesAPI = {
   getResources: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString()
@@ -116,9 +100,36 @@ export const resourcesAPI = {
   },
 }
 
+export const quizAPI = {
+  createQuiz: async (quizData) => {
+    return fetchWithAuth(`${API_URL}/quiz/create_quiz`, {
+      method: "POST",
+      body: JSON.stringify(quizData),
+    })
+  },
+
+  getAllQuizzes: async () => {
+    return fetchWithAuth(`${API_URL}/quiz/quizzes`)
+  },
+
+  submitQuizAnswers: async (id, answers) => {
+    return fetchWithAuth(`${API_URL}/quiz/correct_quiz/${id}`, {
+      method: "POST",
+      body: JSON.stringify({ answers }),
+    })
+  },
+  getQuizById: async (id) => {
+    return fetchWithAuth(`${API_URL}/quiz/quiz/${id}`)
+  },
+  deleteQuiz: async (id) => {
+    return fetchWithAuth(`${API_URL}/quiz/delete_quiz/${id}`, {
+      method: "DELETE",
+    })
+  }
+}
+
 export default {
   authAPI,
   interviewAPI,
-  quizAPI,
   resourcesAPI,
 }

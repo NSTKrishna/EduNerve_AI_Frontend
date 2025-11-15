@@ -4,8 +4,7 @@ import { useLearner } from "../../context/LearnerContext"
 import Button from "../common/Button"
 
 const links = [
-  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "Learning", to: "/lms", icon: BookOpen },
+  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard }
 ] 
 
 export default function LearningSidebar({ open = false, onClose }) {
