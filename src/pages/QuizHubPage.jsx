@@ -136,138 +136,94 @@ export default function QuizHubPage() {
   };
 
   const handleGenerateQuiz = async () => {
-    if (!aiPrompt.trim()) return;
+    if (!aiPrompt.trim()) {
+      alert("Please enter a prompt to generate a quiz");
+      return;
+    }
 
     setIsGenerating(true);
     try {
-      // Step 1: Call backend API to generate quiz
-      const createResponse = await quizAPI.createQuiz({
+      console.log("🚀 Starting quiz generation with prompt:", aiPrompt);
+
+      const quizData = {
         prompt: aiPrompt,
         difficulty:
-          selectedDifficulty !== "All" ? selectedDifficulty : "Intermediate",
-        questionCount: 10,
-      });
+          selectedDifficulty === "All" ? "Intermediate" : selectedDifficulty,
+        questionCount: 5,
+      };
 
-      console.log("Create quiz response:", createResponse);
+      console.log("📤 Sending to backend:", quizData);
+
+      // Create quiz
+      const createResponse = await quizAPI.createQuiz(quizData);
+      console.log("✅ Create quiz response:", createResponse);
 
       // Handle different response structures
-      let quizData = null;
+      let questions = null;
+      let quizInfo = null;
 
-      // Check if response has quiz property
       if (createResponse.quiz) {
-        console.log("✅ Found quiz in response.quiz");
-        quizData = createResponse.quiz;
+        quizInfo = createResponse.quiz;
+        questions = createResponse.quiz.questions;
       } else if (createResponse.data?.quiz) {
-        console.log("✅ Found quiz in response.data.quiz");
-        quizData = createResponse.data.quiz;
-      } else if (createResponse.data) {
-        console.log("✅ Found quiz in response.data");
-        quizData = createResponse.data;
-      } else {
-        console.log("✅ Using response as quiz data");
-        quizData = createResponse;
+        quizInfo = createResponse.data.quiz;
+        questions = createResponse.data.quiz.questions;
+      } else if (createResponse.questions) {
+        questions = createResponse.questions;
+        quizInfo = createResponse;
+      } else if (createResponse.data?.questions) {
+        questions = createResponse.data.questions;
+        quizInfo = createResponse.data;
       }
 
-      console.log("Quiz data extracted:", quizData);
+      console.log("Extracted questions:", questions);
+      console.log("Quiz info:", quizInfo);
 
-      // Step 2: Check if we have the quiz data directly in response
-      if (quizData.questions && quizData.questions.length > 0) {
-        console.log(
-          "✅ Found questions in response, count:",
-          quizData.questions.length
-        );
-        console.log("Sample question:", quizData.questions[0]);
-
-        // Backend returned questions directly, use them
-        const customQuiz = {
-          id: quizData.id || quizData._id || Date.now(),
-          title: quizData.title || quizData.topic || "AI Generated Quiz",
-          description: quizData.description || aiPrompt,
-          subject: quizData.subject || "AI Generated",
-          difficulty:
-            quizData.difficulty ||
-            (selectedDifficulty !== "All"
-              ? selectedDifficulty
-              : "Intermediate"),
-          questions: quizData.questions?.length || 10,
-          duration:
-            quizData.duration || `${quizData.questions?.length * 2 || 20} min`,
-          completions: quizData.completions || 0,
-          aiGenerated: true,
-          generatedQuestions: quizData.questions,
-        };
-
-        console.log("📝 Custom quiz object created:", customQuiz);
-        console.log(
-          "generatedQuestions being passed:",
-          customQuiz.generatedQuestions
-        );
-        console.log(
-          "generatedQuestions length:",
-          customQuiz.generatedQuestions?.length
-        );
-
-        // Refresh quiz list to show the new quiz
-        fetchQuizzes();
-
-        setActiveQuiz(customQuiz);
-        setQuizState("taking");
-        setAiPrompt("");
-        return;
-      }
-
-      // Step 3: If we have an ID, fetch the complete quiz details
-      const quizId =
-        createResponse.id || createResponse._id || createResponse.quizId;
-
-      if (quizId) {
-        const quizDetails = await quizAPI.getQuizById(quizId);
-        console.log("Quiz details:", quizDetails);
+      // Check if we got questions
+      if (questions && Array.isArray(questions) && questions.length > 0) {
+        console.log("✅ Found questions, count:", questions.length);
+        console.log("Sample question:", questions[0]);
 
         const customQuiz = {
-          id: quizDetails.id || quizDetails._id,
-          title: quizDetails.title || "AI Generated Quiz",
-          description: quizDetails.description || aiPrompt,
-          subject: quizDetails.subject || "AI Generated",
-          difficulty:
-            quizDetails.difficulty ||
-            (selectedDifficulty !== "All"
-              ? selectedDifficulty
-              : "Intermediate"),
-          questions: quizDetails.questions?.length || 10,
-          duration:
-            quizDetails.duration ||
-            `${quizDetails.questions?.length * 2 || 20} min`,
-          completions: quizDetails.completions || 0,
-          aiGenerated: true,
-          generatedQuestions: quizDetails.questions,
+          id: quizInfo?.id || quizInfo?._id || Date.now().toString(),
+          title:
+            quizInfo?.title || quizInfo?.topic || aiPrompt.substring(0, 50),
+          description:
+            quizInfo?.description || `AI-generated quiz about ${aiPrompt}`,
+          difficulty: quizInfo?.difficulty || quizData.difficulty,
+          subject: quizInfo?.subject || "AI Generated",
+          questions: questions.length,
+          duration: `${questions.length * 2} min`,
+          completions: 0,
+          generatedQuestions: questions,
         };
+
+        console.log("📝 Starting quiz with:", customQuiz);
+
+        // Refresh quiz list in background
+        fetchQuizzes().catch((err) =>
+          console.error("Error refreshing quiz list:", err)
+        );
 
         setActiveQuiz(customQuiz);
         setQuizState("taking");
         setAiPrompt("");
       } else {
-        // No ID and no questions, use response as-is and create fallback
-        console.warn("No quiz ID or questions in response, using fallback");
-        throw new Error("No quiz data returned from create API");
+        console.error("❌ No questions in response");
+        console.error("Full response:", createResponse);
+        alert(
+          "Quiz was created but no questions were returned. Please check the backend response format."
+        );
       }
     } catch (error) {
-      console.error("Error generating quiz:", error);
-      alert("Failed to generate quiz. Using default questions instead.");
-
-      const fallbackQuiz = {
-        id: Date.now(),
-        title: "Custom Quiz",
-        description: aiPrompt,
-        subject: "General",
-        difficulty: "Intermediate",
-        questions: 5,
-        duration: "10 min",
-        completions: 0,
-      };
-      setActiveQuiz(fallbackQuiz);
-      setQuizState("taking");
-      setAiPrompt("");
+      console.error("❌ Error generating quiz:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      alert(
+        `Failed to generate quiz: ${error.message}. Check console for details.`
+      );
     } finally {
       setIsGenerating(false);
     }
