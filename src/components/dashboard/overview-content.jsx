@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLearner } from "../../context/LearnerContext";
+import { dashboardAPI } from "../../lib/api";
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ export function OverviewContent() {
     avgScore: 0,
     totalInterviews: 0,
     completedInterviews: 0,
+    recentInterviews: [],
   });
   const [expandedFeedback, setExpandedFeedback] = useState({});
 
@@ -40,32 +42,46 @@ export function OverviewContent() {
   };
 
   useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const response = await dashboardAPI.getStats();
+        if (response.success) {
+          const { totalQuizAttempts, interviewSessions, recentInterviews } =
+            response.data;
+
+          setStats((prev) => ({
+            ...prev,
+            totalQuizzes: totalQuizAttempts,
+            totalInterviews: interviewSessions,
+            completedInterviews: recentInterviews.length, // Display count of recentCompleted
+            recentInterviews: recentInterviews,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
+
+  useEffect(() => {
     if (learnerProfile) {
       const quizzes = learnerProfile.quizAttempts || [];
-      const interviews = learnerProfile.interviewsPracticed || [];
-
       const totalQuizzes = quizzes.length;
       const avgScore =
         totalQuizzes > 0
           ? quizzes.reduce((sum, q) => sum + (q.percentage || 0), 0) /
-            totalQuizzes
+          totalQuizzes
           : 0;
 
-      const totalInterviews = interviews.length;
-      const completedInterviews = interviews.filter(
-        (i) => i.status === "completed"
-      ).length;
-
-      setStats({
-        totalQuizzes,
+      setStats((prev) => ({
+        ...prev,
         avgScore: Math.round(avgScore * 10) / 10,
-        totalInterviews,
-        completedInterviews,
-      });
+      }));
     }
   }, [learnerProfile]);
 
-  // Prepare quiz chart data
   const quizChartData = (learnerProfile?.quizAttempts || [])
     .slice(-6)
     .map((quiz, index) => ({
@@ -160,9 +176,10 @@ export function OverviewContent() {
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               <span className="text-accent font-medium">
+                {/* Just showing total for now as "completed" count logic might differ */}
                 {stats.completedInterviews}
               </span>{" "}
-              completed
+              feedback received
             </p>
           </CardContent>
         </Card>
@@ -171,93 +188,93 @@ export function OverviewContent() {
       {/* Charts */}
       {(stats.totalQuizzes > 0 ||
         (learnerProfile?.skills?.length || 0) > 0) && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Quiz Performance Chart */}
-          {stats.totalQuizzes > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Quiz Performance</CardTitle>
-                <CardDescription>
-                  Your last {quizChartData.length} quiz attempts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={quizChartData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-border"
-                    />
-                    <XAxis dataKey="name" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      name="Score %"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Quiz Performance Chart */}
+            {stats.totalQuizzes > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Quiz Performance</CardTitle>
+                  <CardDescription>
+                    Your last {quizChartData.length} quiz attempts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={quizChartData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-border"
+                      />
+                      <XAxis dataKey="name" className="text-xs" />
+                      <YAxis domain={[0, 100]} className="text-xs" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        name="Score %"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Skills Progress Chart */}
-          {(learnerProfile?.skills?.length || 0) > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Tech Stack</CardTitle>
-                <CardDescription>Skills you're tracking</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={skillsChartData} layout="vertical">
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-border"
-                    />
-                    <XAxis
-                      type="number"
-                      domain={[0, 100]}
-                      className="text-xs"
-                    />
-                    <YAxis
-                      dataKey="skill"
-                      type="category"
-                      width={100}
-                      className="text-xs"
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Bar
-                      dataKey="progress"
-                      fill="hsl(var(--primary))"
-                      radius={[0, 8, 8, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+            {/* Skills Progress Chart */}
+            {(learnerProfile?.skills?.length || 0) > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Tech Stack</CardTitle>
+                  <CardDescription>Skills you're tracking</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={skillsChartData} layout="vertical">
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-border"
+                      />
+                      <XAxis
+                        type="number"
+                        domain={[0, 100]}
+                        className="text-xs"
+                      />
+                      <YAxis
+                        dataKey="skill"
+                        type="category"
+                        width={100}
+                        className="text-xs"
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <Bar
+                        dataKey="progress"
+                        fill="hsl(var(--primary))"
+                        radius={[0, 8, 8, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
       {/* Recent Interview Feedback */}
-      {stats.completedInterviews > 0 && (
+      {stats.recentInterviews && stats.recentInterviews.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Recent Interview Feedback</CardTitle>
@@ -267,74 +284,70 @@ export function OverviewContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {(learnerProfile?.interviewsPracticed || [])
-                .filter((interview) => interview.status === "completed")
-                .slice(0, 5)
-                .map((interview, index) => (
-                  <div
-                    key={interview.id || index}
-                    className="flex flex-col gap-2 rounded-lg border border-border p-4 hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h4 className="font-semibold text-foreground">
-                          {interview.role} - {interview.interviewType}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(
-                            interview.startedAt || interview.completedAt
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                      {interview.overallScore && (
-                        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                          {interview.overallScore}%
-                        </span>
-                      )}
+              {stats.recentInterviews.map((interview, index) => (
+                <div
+                  key={interview.id || index}
+                  className="flex flex-col gap-2 rounded-lg border border-border p-4 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-foreground">
+                        {interview.role || "N/A"} - {interview.interviewType || "Interview"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(
+                          interview.createdAt || interview.startedAt
+                        ).toLocaleDateString()}
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      {interview.feedback ? (
-                        <>
-                          <p
-                            className={`text-sm text-muted-foreground ${
-                              expandedFeedback[interview.id]
-                                ? ""
-                                : "line-clamp-2"
+                    {interview.overallScore && (
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        {interview.overallScore}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {interview.feedback ? (
+                      <>
+                        <p
+                          className={`text-sm text-muted-foreground ${expandedFeedback[interview.id]
+                              ? ""
+                              : "line-clamp-2"
                             }`}
-                          >
-                            {interview.feedback}
-                          </p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleFeedback(interview.id)}
-                            className="text-xs cursor-pointer"
-                          >
-                            {expandedFeedback[interview.id]
-                              ? "Show Less"
-                              : "Show Full Feedback"}
-                          </Button>
-                        </>
-                      ) : (
-                        <div className="text-sm text-muted-foreground italic">
-                          No feedback available for this interview
-                        </div>
-                      )}
-                    </div>
-                    {interview.strengths && interview.strengths.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {interview.strengths.slice(0, 3).map((strength, i) => (
-                          <span
-                            key={i}
-                            className="rounded-md bg-green-500/10 px-2 py-0.5 text-xs text-green-700 dark:text-green-400"
-                          >
-                            {strength}
-                          </span>
-                        ))}
+                        >
+                          {interview.feedback}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleFeedback(interview.id)}
+                          className="text-xs cursor-pointer"
+                        >
+                          {expandedFeedback[interview.id]
+                            ? "Show Less"
+                            : "Show Full Feedback"}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic">
+                        No feedback available for this interview
                       </div>
                     )}
                   </div>
-                ))}
+                  {interview.strengths && interview.strengths.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {interview.strengths.slice(0, 3).map((strength, i) => (
+                        <span
+                          key={i}
+                          className="rounded-md bg-green-500/10 px-2 py-0.5 text-xs text-green-700 dark:text-green-400"
+                        >
+                          {strength}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

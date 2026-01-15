@@ -18,13 +18,13 @@ function Interview() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const transcriptEndRef = useRef(null);
-  const timerIntervalRef = useRef(null); 
+  const timerIntervalRef = useRef(null);
 
   const [formData, setFormData] = useState({
     userId: learnerProfile?.id || `user_${Date.now()}`,
     role: learnerProfile?.role || "",
     interviewType: "mixed",
-    technologies: learnerProfile?.skills || [], 
+    technologies: learnerProfile?.skills || [],
   });
   useEffect(() => {
     if (learnerProfile) {
@@ -192,6 +192,17 @@ function Interview() {
     console.log("🚀 Starting interview with formData:", formData);
     setIsLoading(true);
 
+    // Request microphone permission explicitly
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Release the microphone
+    } catch (permError) {
+      console.error("Microphone permission denied:", permError);
+      setStatus("Microphone access denied. Please allow microphone access in your browser settings to continue.");
+      setIsLoading(false);
+      return;
+    }
+
     if (vapiInstance) {
       try {
         await vapiInstance.stop();
@@ -206,17 +217,10 @@ function Interview() {
       setTranscript([]);
 
       const token = localStorage.getItem("authToken");
-      console.log("Token check before interview:", {
-        hasToken: !!token,
-        tokenLength: token?.length,
-        tokenPreview: token?.substring(0, 20) + "...",
-        allLocalStorage: Object.keys(localStorage),
-      });
- 
       if (!token) {
         setStatus("Authentication token not found. Please log in again.");
-        setIsLoading(false);   
-        return; 
+        setIsLoading(false);
+        return;
       }
 
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -242,25 +246,8 @@ function Interview() {
         return;
       }
 
-      console.log("📡 Server response:", {
-        status: res.status,
-        ok: res.ok,
-        data: data,
-      });
-
       if (!res.ok) {
-        if (res.status === 401) {
-          setStatus("Authentication failed. Please log in again.");
-          console.error("401 Error - Token might be expired or invalid");
-        } else {
-          setStatus(`Error: ${data?.error || "Server error"}`);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      if (!data.success) {
-        setStatus(`Error: ${data.error}`);
+        setStatus(data?.error || "Server error");
         setIsLoading(false);
         return;
       }
@@ -269,9 +256,11 @@ function Interview() {
       setInterviewId(data.interviewId);
       setStep(2);
 
-      const vapi = new Vapi(
-        data.publicKey || "963b4430-fefb-4d42-bc81-78b81277cf45"
-      );
+      // Use the key from server or fallback
+      const publicKey = data.publicKey || "963b4430-fefb-4d42-bc81-78b81277cf45";
+      console.log("Using Vapi Public Key:", publicKey);
+
+      const vapi = new Vapi(publicKey);
       setVapiInstance(vapi);
 
       setStatus("🔄 Connecting to AI interviewer...");
@@ -299,42 +288,33 @@ function Interview() {
           timerIntervalRef.current = null;
         }
 
-
+        console.log("Call ended. Transcript length:", transcript.length);
         if (interviewId && transcript.length > 0) {
           try {
             setStatus("Saving interview data and generating feedback...");
             const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-            const response = await fetch(
-              `${API_URL}/interview/complete`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-                },
-                body: JSON.stringify({
-                  interviewId,
-                  transcript,
-                  duration: callDuration,
-                }),
+            await fetch(`${API_URL}/interview/complete`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              },
+              body: JSON.stringify({
+                interviewId,
+                transcript,
+                duration: callDuration,
+              }),
+            }).then(r => r.json()).then(d => {
+              if (d.success) {
+                refreshProfile();
+                setStatus("Interview completed successfully! Check your dashboard.");
+              } else {
+                setStatus("Interview completed. Feedback generation failed.");
               }
-            );
-
-            const data = await response.json();
-            if (data.success) {
-              await refreshProfile(); // Refresh profile to update dashboard
-              setStatus(
-                "Interview completed successfully! Check your dashboard for detailed feedback."
-              );
-            } else {
-              setStatus("Mock interview completed. Feedback generation failed.");
-            }
-          } catch (error) {
-            console.error("Error saving interview:", error);
-            setStatus("Mock interview completed. Could not save feedback.");
-          }
+            });
+          } catch (e) { console.error(e); setStatus("Could not save feedback."); }
         } else {
-          setStatus("Mock interview completed. Great job!");
+          setStatus("Mock interview completed.");
         }
       });
 
@@ -361,54 +341,51 @@ function Interview() {
       });
 
       vapi.on("error", (error) => {
-        console.error("VAPI Error:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
-        setStatus(
-          `Error: ${error.message || "Call failed. Check console for details."}`
-        );
+        console.error("VAPI Error Details:", JSON.stringify(error, null, 2));
+        setStatus(`Connection Error: ${error.errorMsg || error.message || "Unknown error"}`);
         setIsConnected(false);
       });
 
       try {
-        const callConfig = {
-          name: `${formData.role} Interview`,
-          transcriber: {
-            provider: "deepgram",
-            model: "nova-2",
-            language: "en-US",
-          },
-          model: {
-            provider: "openai",
-            model: "gpt-4o-mini",
-            temperature: 0.7,
-            messages: [
-              {
-                role: "system",
-                content: data.systemPrompt,
-              },
-            ],
-          },
-          voice: {
-            provider: "playht",
-            voiceId: "jennifer",
-          },
-          firstMessage: `Hello! I'm your AI interviewer for the ${formData.role} position. I'm excited to conduct this ${formData.interviewType} interview with you today. Let's begin - please tell me a bit about yourself.`,
-          endCallMessage:
-            "Thank you for participating in this mock interview. You did a great job! I hope the feedback was helpful.",
-          recordingEnabled: false,
-        };
+        // Option 1: Start with a pre-configured Assistant ID if provided
+        if (data.assistantId) {
+          console.log("Starting Vapi call with Assistant ID:", data.assistantId);
+          await vapi.start(data.assistantId);
+        }
+        // Option 2: Start with a minimal inline config (fallback)
+        else {
+          const callConfig = {
+            name: `${formData.role} Interview`,
+            model: {
+              provider: "openai",
+              model: "gpt-3.5-turbo",
+              messages: [
+                {
+                  role: "system",
+                  content: data.systemPrompt || "You are a helpful interviewer.",
+                },
+              ],
+            },
+            // Use standard 11labs voice which is widely supported
+            voice: {
+              provider: "11labs",
+              voiceId: "paula",
+            },
+            firstMessage: `Hello! I'm your AI interviewer for the ${formData.role} position.`,
+          };
 
-        await vapi.start(callConfig);
+          console.log("Starting Vapi call with minimal fallback config:", callConfig);
+          await vapi.start(callConfig);
+        }
       } catch (startError) {
         console.error("Error calling vapi.start():", startError);
         setStatus(`Failed to start call: ${startError.message}`);
         setIsConnected(false);
-        setIsLoading(false);
         throw startError;
       }
     } catch (err) {
       console.error(err);
-      setStatus("Error starting interview. Check console for details.");
+      setStatus("Error starting interview. Check console.");
       setIsLoading(false);
     } finally {
       setIsLoading(false);
@@ -493,551 +470,197 @@ function Interview() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div
-        className="App"
-        style={{ padding: 20, maxWidth: "1200px", margin: "0 auto" }}
-      >
-        <h1>AI Mock Interview Trainer</h1>
-        <p style={{ color: "#666", marginBottom: "20px" }}>
-          Powered by Gemini AI + VAPI - Get personalized interview questions
-          based on your role and tech stack
-        </p>
+    <div className="flex flex-col h-[calc(100vh-80px)] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {step === 1 && (
+        <div className="max-w-2xl mx-auto w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-3">AI Mock Interview</h1>
+            <p className="text-muted-foreground">
+              Configure your session and get ready to practice
+            </p>
+          </div>
 
-        {step === 1 && (
-          <div
-            style={{
-              background: "#f8f9fa",
-              padding: "30px",
-              borderRadius: "12px",
-              marginBottom: "20px",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>📋 Interview Configuration</h2>
+          <div className="bg-white rounded-2xl border border-border shadow-sm p-6 sm:p-8">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 text-sm">
+                1
+              </span>
+              Configuration
+            </h2>
 
-            <div style={{ marginBottom: "25px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "10px",
-                }}
-              >
-                Select Your Role *
-              </label>
-              <select
-                value={formData.role}
-                onChange={(e) => handleInputChange("role", e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "16px",
-                  cursor: "pointer",
-                }}
-              >
-                <option value="">-- Select a role --</option>
-                {roles.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: "25px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "bold",
-                  marginBottom: "10px",
-                }}
-              >
-                Interview Type *
-              </label>
-              <div style={{ display: "flex", gap: "10px" }}>
-                {["technical", "behavioral", "mixed"].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => handleInputChange("interviewType", type)}
-                    style={{
-                      flex: 1,
-                      padding: "12px",
-                      borderRadius: "6px",
-                      border:
-                        formData.interviewType === type
-                          ? "2px solid #007bff"
-                          : "1px solid #ddd",
-                      background:
-                        formData.interviewType === type ? "#e7f3ff" : "white",
-                      cursor: "pointer",
-                      fontWeight:
-                        formData.interviewType === type ? "bold" : "normal",
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {formData.role && (
-              <div style={{ marginBottom: "25px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontWeight: "bold",
-                    marginBottom: "10px",
-                  }}
-                >
-                  Select Technologies to Cover * (Choose at least 1)
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Select Your Role
                 </label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {techOptions[formData.role]?.map((tech) => (
+                <select
+                  value={formData.role}
+                  onChange={(e) => handleInputChange("role", e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                >
+                  <option value="">-- Select a role --</option>
+                  {roles.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-3">
+                  Interview Type
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {["technical", "behavioral", "mixed"].map((type) => (
                     <button
-                      key={tech}
-                      onClick={() => toggleTechnology(tech)}
-                      style={{
-                        padding: "10px 20px",
-                        borderRadius: "20px",
-                        border: formData.technologies.includes(tech)
-                          ? "2px solid #28a745"
-                          : "1px solid #ddd",
-                        background: formData.technologies.includes(tech)
-                          ? "#d4edda"
-                          : "white",
-                        cursor: "pointer",
-                        fontWeight: formData.technologies.includes(tech)
-                          ? "bold"
-                          : "normal",
-                      }}
+                      key={type}
+                      onClick={() => handleInputChange("interviewType", type)}
+                      className={`py-3 px-2 rounded-xl text-sm font-medium capitalize transition-all border ${formData.interviewType === type
+                          ? "bg-blue-600 text-white border-blue-600 shadow-md transform scale-[1.02]"
+                          : "bg-white text-muted-foreground border-border hover:bg-slate-50"
+                        }`}
                     >
-                      {tech} {formData.technologies.includes(tech) && "✓"}
+                      {type}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
 
-            <button
-              onClick={startInterview}
-              disabled={
-                !formData.role ||
-                formData.technologies.length === 0 ||
-                isLoading
-              }
-              style={{
-                width: "100%",
-                padding: "15px",
-                backgroundColor:
-                  !formData.role ||
-                  formData.technologies.length === 0 ||
-                  isLoading
-                    ? "#6c757d"
-                    : "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "18px",
-                fontWeight: "bold",
-                cursor:
-                  !formData.role ||
-                  formData.technologies.length === 0 ||
-                  isLoading
-                    ? "not-allowed"
-                    : "pointer",
-              }}
-            >
-              {isLoading
-                ? "Generating Interview..."
-                : "Generate & Start Interview"}
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <>
-            {interviewInfo && (
-              <div
-                style={{
-                  background: "#e7f3ff",
-                  padding: "15px",
-                  borderRadius: "8px",
-                  marginBottom: "20px",
-                  border: "1px solid #0066cc",
-                }}
-              >
-                <h3 style={{ margin: "0 0 10px 0", color: "#0066cc" }}>
-                  📋 Your Interview: {formData.role}
-                </h3>
-                <p style={{ margin: "5px 0", color: "#333" }}>
-                  <strong>Type:</strong> {formData.interviewType.toUpperCase()}{" "}
-                  |<strong> Duration:</strong> {interviewInfo.duration} |
-                  <strong> Technologies:</strong>{" "}
-                  {formData.technologies.join(", ")}
-                </p>
-                <p style={{ margin: "5px 0", color: "#333" }}>
-                  <strong>Sections:</strong>{" "}
-                  {interviewInfo.sections.join(" → ")}
-                </p>
-              </div>
-            )}
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                marginBottom: "20px",
-                minHeight: "400px",
-              }}
-            >
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "15px",
-                    left: "15px",
-                    background: isConnected ? "#10b981" : "#ef4444",
-                    color: "white",
-                    padding: "6px 12px",
-                    borderRadius: "20px",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: "white",
-                      animation: isConnected ? "pulse 2s infinite" : "none",
-                    }}
-                  ></div>
-                  {isConnected ? "Connected" : "Connecting..."}
-                </div>
-
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "15px",
-                    right: "15px",
-                    background: "rgba(0,0,0,0.5)",
-                    color: "white",
-                    padding: "6px 12px",
-                    borderRadius: "20px",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {Math.floor(callDuration / 60)}:
-                  {(callDuration % 60).toString().padStart(2, "0")}
-                </div>
-
-                <div
-                  style={{
-                    width: "200px",
-                    height: "200px",
-                    background: "rgba(255,255,255,0.1)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "20px",
-                    border: isSpeaking
-                      ? "4px solid #10b981"
-                      : "4px solid rgba(255,255,255,0.3)",
-                    transition: "all 0.3s ease",
-                    animation: isSpeaking ? "robotPulse 1s infinite" : "none",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "120px",
-                      filter: isSpeaking
-                        ? "drop-shadow(0 0 20px #10b981)"
-                        : "none",
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    🤖
+              {formData.role && (
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    Select Technologies <span className="text-xs text-muted-foreground font-normal">(Choose at least 1)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {techOptions[formData.role]?.map((tech) => (
+                      <button
+                        key={tech}
+                        onClick={() => toggleTechnology(tech)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${formData.technologies.includes(tech)
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : "bg-white text-slate-600 border-border hover:bg-slate-50"
+                          }`}
+                      >
+                        {tech}
+                      </button>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                <h3
-                  style={{
-                    color: "white",
-                    margin: "0 0 10px 0",
-                    textAlign: "center",
-                  }}
-                >
-                  AI Interviewer
-                </h3>
-                <p
-                  style={{
-                    color: "rgba(255,255,255,0.8)",
-                    margin: 0,
-                    textAlign: "center",
-                    fontSize: "14px",
-                  }}
-                >
-                  {isSpeaking
-                    ? "🎙️ Speaking..."
-                    : isConnected
-                    ? "👂 Listening..."
-                    : "⏳ Starting..."}
-                </p>
-              </div>
-
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                  boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "15px",
-                    left: "15px",
-                    background: "rgba(0,0,0,0.5)",
-                    color: "white",
-                    padding: "6px 12px",
-                    borderRadius: "20px",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  🎤 Your Microphone
-                </div>
-
-                <div
-                  style={{
-                    width: "200px",
-                    height: "200px",
-                    background: "rgba(255,255,255,0.1)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "20px",
-                    border: "4px solid rgba(255,255,255,0.3)",
-                  }}
-                >
-                  <div style={{ fontSize: "120px" }}>👤</div>
-                </div>
-
-                <h3
-                  style={{
-                    color: "white",
-                    margin: "0 0 10px 0",
-                    textAlign: "center",
-                  }}
-                >
-                  You
-                </h3>
-                <p
-                  style={{
-                    color: "rgba(255,255,255,0.8)",
-                    margin: 0,
-                    textAlign: "center",
-                    fontSize: "14px",
-                  }}
-                >
-                  {isConnected
-                    ? "🎙️ Speak clearly into your microphone"
-                    : "⏳ Preparing..."}
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
               <button
-                onClick={stopInterview}
-                style={{
-                  flex: 1,
-                  backgroundColor: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "12px 20px",
-                  cursor: "pointer",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                }}
+                onClick={startInterview}
+                disabled={
+                  !formData.role ||
+                  formData.technologies.length === 0 ||
+                  isLoading
+                }
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 mt-4"
               >
-                🛑 End Interview
-              </button>
-              <button
-                onClick={resetForm}
-                style={{
-                  backgroundColor: "#6c757d",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "12px 20px",
-                  cursor: "pointer",
-                  fontSize: "16px",
-                }}
-              >
-                🔄 New Interview
+                {isLoading ? (
+                  <>Starting Session...</>
+                ) : (
+                  <>Start Interview</>
+                )}
               </button>
             </div>
-
-            {/* Live Transcript Display */}
-            {transcript.length > 0 && (
-              <div
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #ddd",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  marginBottom: "20px",
-                  maxHeight: "400px",
-                  overflowY: "auto",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 15px 0",
-                    color: "#333",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <span>💬</span>
-                  <span>Conversation Transcript</span>
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      background: "#e7f3ff",
-                      color: "#0066cc",
-                      padding: "4px 8px",
-                      borderRadius: "12px",
-                      fontWeight: "normal",
-                    }}
-                  >
-                    {transcript.length} messages
-                  </span>
-                </h3>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  {transcript.map((msg, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems:
-                          msg.speaker === "You" ? "flex-end" : "flex-start",
-                        animation: "slideIn 0.3s ease-out",
-                      }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: "80%",
-                          background:
-                            msg.speaker === "You" ? "#e7f3ff" : "#f0f0f0",
-                          padding: "12px 16px",
-                          borderRadius: "12px",
-                          borderBottomRightRadius:
-                            msg.speaker === "You" ? "4px" : "12px",
-                          borderBottomLeftRadius:
-                            msg.speaker === "You" ? "12px" : "4px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: "bold",
-                            color: msg.speaker === "You" ? "#0066cc" : "#666",
-                            marginBottom: "4px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
-                        >
-                          <span>{msg.speaker === "You" ? "👤" : "🤖"}</span>
-                          <span>{msg.speaker}</span>
-                          <span
-                            style={{
-                              fontSize: "10px",
-                              color: "#999",
-                              fontWeight: "normal",
-                            }}
-                          >
-                            {msg.timestamp}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            color: "#333",
-                            fontSize: "14px",
-                            lineHeight: "1.5",
-                            wordWrap: "break-word",
-                          }}
-                        >
-                          {msg.text}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={transcriptEndRef} />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        <div
-          style={{
-            background: "#f6f8fa",
-            padding: "15px",
-            borderRadius: "8px",
-            marginBottom: "20px",
-          }}
-        >
-          <h3 style={{ margin: "0 0 10px 0" }}>Status</h3>
-          <pre
-            style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "inherit" }}
-          >
-            {status}
-          </pre>
+          </div>
         </div>
-      </div>
+      )}
+
+      {step === 2 && (
+        <div className="flex flex-col h-full max-w-6xl mx-auto w-full">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={stopInterview}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="text-lg">←</span> Back
+            </button>
+            <h2 className="text-xl font-bold">Mock Interview</h2>
+            <div className="bg-slate-100 px-4 py-1.5 rounded-full font-mono font-medium text-slate-700 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              {Math.floor(callDuration / 60)}:{(callDuration % 60).toString().padStart(2, "0")}
+            </div>
+          </div>
+
+          {/* Status Bar */}
+          {!isConnected && (
+            <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              {status}
+            </div>
+          )}
+
+          {/* Info Card */}
+          <div className="bg-white border border-border rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+            <div>
+              <h3 className="font-bold text-lg">{formData.role}</h3>
+              <p className="text-sm text-muted-foreground capitalize">
+                {formData.interviewType} Interview • {formData.technologies.slice(0, 3).join(", ")}{formData.technologies.length > 3 && ` +${formData.technologies.length - 3}`}
+              </p>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${isConnected ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+              <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-600" : "bg-yellow-600 animate-pulse"}`}></div>
+              {isConnected ? "Active" : "Connecting..."}
+            </div>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-[400px]">
+            {/* AI Avatar */}
+            <div className="bg-white border border-border rounded-2xl flex flex-col items-center justify-center p-8 shadow-sm relative overflow-hidden group">
+              <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 transition-all duration-300 ${isSpeaking ? "bg-blue-100 scale-110" : "bg-slate-50"}`}>
+                <div className={`text-4xl transition-all duration-300 ${isSpeaking ? "scale-110" : "scale-100"}`}>
+                  🎙️
+                </div>
+              </div>
+
+              {isSpeaking && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-40 h-40 border-4 border-blue-100 rounded-full animate-ping opacity-20"></div>
+                </div>
+              )}
+
+              <h3 className="font-bold text-lg">AI Interviewer</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isSpeaking ? "Speaking..." : "Listening..."}
+              </p>
+            </div>
+
+            {/* User Avatar */}
+            <div className="bg-white border border-border rounded-2xl flex flex-col items-center justify-center p-8 shadow-sm">
+              <div className="w-32 h-32 rounded-full bg-blue-600/10 flex items-center justify-center mb-6">
+                <div className="text-4xl text-blue-600">
+                  👤
+                </div>
+              </div>
+              <h3 className="font-bold text-lg">You</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Waiting to connect...
+              </p>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <button
+              onClick={stopInterview}
+              className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 min-w-[200px] justify-center"
+            >
+              <span>End Interview</span>
+            </button>
+            <button
+              onClick={resetForm}
+              className="px-6 py-3 bg-white border border-border hover:bg-slate-50 text-foreground font-medium rounded-xl transition-all flex items-center gap-2"
+            >
+              <span>New</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

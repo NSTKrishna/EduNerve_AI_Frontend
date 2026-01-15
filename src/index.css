@@ -121,5 +121,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-size: 40px 40px;
+    background-image: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--border) 50%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--border) 50%, transparent) 1px,
+        transparent 1px
+      );
   }
 }

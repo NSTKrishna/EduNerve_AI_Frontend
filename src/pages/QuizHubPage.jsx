@@ -11,7 +11,6 @@ import {
   Trash2,
 } from "lucide-react";
 
-import Navbar from "../components/layout/Navbar";
 import Button from "../components/common/Button";
 import Badge from "../components/common/Badge";
 import {
@@ -40,16 +39,15 @@ const difficultyStyles = {
 };
 
 export default function QuizHubPage() {
-  const [selectedSubject, setSelectedSubject] = useState("All");
+  const [selectedSubject] = useState("All");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [activeQuiz, setActiveQuiz] = useState(null);
-  const [quizState, setQuizState] = useState("browse"); // browse, taking, results
+  const [quizState, setQuizState] = useState("browse");
   const [answers, setAnswers] = useState([]);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [quizzes, setQuizzes] = useState([]);
 
-  // Fetch all quizzes on component mount
   useEffect(() => {
     fetchQuizzes();
   }, []);
@@ -59,7 +57,6 @@ export default function QuizHubPage() {
       const data = await quizAPI.getAllQuizzes();
       console.log("Fetched quizzes:", data);
 
-      // Handle different response formats
       let quizzesArray = [];
       if (Array.isArray(data)) {
         quizzesArray = data;
@@ -69,7 +66,6 @@ export default function QuizHubPage() {
         quizzesArray = data.data;
       }
 
-      // Format quizzes for display
       const formattedQuizzes = quizzesArray.map((quiz) => ({
         id: quiz.id || quiz._id,
         title: quiz.title || quiz.topic || "Quiz",
@@ -87,7 +83,7 @@ export default function QuizHubPage() {
       setQuizzes(formattedQuizzes);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
-      // Keep empty array on error
+
       setQuizzes([]);
     }
   };
@@ -126,7 +122,7 @@ export default function QuizHubPage() {
 
     try {
       await quizAPI.deleteQuiz(quizId);
-      // Refresh the quiz list after deletion
+
       await fetchQuizzes();
       alert("Quiz deleted successfully!");
     } catch (error) {
@@ -154,11 +150,9 @@ export default function QuizHubPage() {
 
       console.log("📤 Sending to backend:", quizData);
 
-      // Create quiz
       const createResponse = await quizAPI.createQuiz(quizData);
       console.log("✅ Create quiz response:", createResponse);
 
-      // Handle different response structures
       let questions = null;
       let quizInfo = null;
 
@@ -179,7 +173,6 @@ export default function QuizHubPage() {
       console.log("Extracted questions:", questions);
       console.log("Quiz info:", quizInfo);
 
-      // Check if we got questions
       if (questions && Array.isArray(questions) && questions.length > 0) {
         console.log("✅ Found questions, count:", questions.length);
         console.log("Sample question:", questions[0]);
@@ -200,7 +193,6 @@ export default function QuizHubPage() {
 
         console.log("📝 Starting quiz with:", customQuiz);
 
-        // Refresh quiz list in background
         fetchQuizzes().catch((err) =>
           console.error("Error refreshing quiz list:", err)
         );
@@ -231,8 +223,7 @@ export default function QuizHubPage() {
 
   if (quizState === "taking" && activeQuiz) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
+      <div className="bg-background text-foreground">
         <QuizTaking
           quiz={activeQuiz}
           onComplete={handleQuizComplete}
@@ -244,8 +235,7 @@ export default function QuizHubPage() {
 
   if (quizState === "results" && activeQuiz) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Navbar />
+      <div className="bg-background text-foreground">
         <QuizResults
           quiz={activeQuiz}
           answers={answers}
@@ -256,44 +246,37 @@ export default function QuizHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
-
-      <div className="flex min-h-screen flex-col">
-        <main className="flex-1 px-4 py-10 sm:px-8 lg:px-12">
+    <div className="bg-background text-foreground">
+      <div className="flex flex-col">
+        <main className="flex-1">
           <div className="mx-auto w-full max-w-6xl">
-            <div className="mb-12">
-              <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-                Assess
-              </p>
-              <h1 className="mt-3 text-4xl font-bold sm:text-5xl">
-                Interactive Quizzes
-              </h1>
-              <p className="mt-4 max-w-3xl text-lg leading-relaxed text-muted-foreground">
-                Challenge yourself with our comprehensive quiz library. Filter
-                by subject and difficulty to find the perfect quiz for your
-                skill level.
-              </p>
-            </div>
 
-            {/* AI Quiz Generator Bar */}
-            <section className="mb-10 rounded-2xl border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-purple-500/5 p-6 shadow-lg backdrop-blur">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Sparkles className="h-5 w-5 text-primary" />
+            <section className="mb-10 rounded-3xl bg-gradient-to-r from-blue-600 to-blue-700 p-8 shadow-2xl">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
+                  <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    AI Quiz Generator
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    AI QUIZ GENERATOR
                   </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Generate custom quizzes on any topic using AI
+                  <p className="text-sm text-blue-100">
+                    Generate a custom quiz in seconds
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <div className="relative flex-1">
+              <p className="text-white mb-6 text-lg">
+                Enter any topic, and let our AI create a personalized quiz to
+                test your knowledge.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                  <label className="text-white text-sm mb-2 block font-medium">
+                    Topic
+                  </label>
                   <input
                     type="text"
                     value={aiPrompt}
@@ -301,107 +284,72 @@ export default function QuizHubPage() {
                     onKeyPress={(e) =>
                       e.key === "Enter" && handleGenerateQuiz()
                     }
-                    placeholder="E.g., Create a quiz about React hooks, Python basics, Machine Learning..."
-                    className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="e.g. React Hooks, Database Indexing"
+                    className="w-full rounded-xl border-0 bg-white px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-white/50"
                     disabled={isGenerating}
                   />
-                  {aiPrompt && !isGenerating && (
-                    <button
-                      onClick={() => setAiPrompt("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      ✕
-                    </button>
-                  )}
                 </div>
-                <Button
-                  variant="primary"
-                  onClick={handleGenerateQuiz}
-                  disabled={isGenerating || !aiPrompt.trim()}
-                  className="px-6 disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Generate
-                    </>
-                  )}
-                </Button>
-              </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="text-xs text-muted-foreground">Try:</span>
-                {[
-                  "JavaScript ES6 features",
-                  "Python data structures",
-                  "React best practices",
-                  "SQL queries basics",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setAiPrompt(suggestion)}
-                    className="rounded-full border border-border bg-background px-3 py-1 text-xs text-foreground hover:border-primary hover:bg-primary/5 transition-colors"
+                <div>
+                  <label className="text-white text-sm mb-2 block font-medium">
+                    Difficulty
+                  </label>
+                  <select
+                    value={
+                      selectedDifficulty === "All"
+                        ? "Beginner"
+                        : selectedDifficulty
+                    }
+                    onChange={(e) => setSelectedDifficulty(e.target.value)}
+                    className="w-full rounded-xl border-0 bg-white px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-white/50"
                     disabled={isGenerating}
                   >
-                    {suggestion}
-                  </button>
-                ))}
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-white text-sm mb-2 block font-medium">
+                    Questions
+                  </label>
+                  <select
+                    className="w-full rounded-xl border-0 bg-white px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-white/50"
+                    disabled={isGenerating}
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                  </select>
+                </div>
               </div>
+
+              <Button
+                onClick={handleGenerateQuiz}
+                disabled={isGenerating || !aiPrompt.trim()}
+                className="w-full md:w-auto text-blue-600 hover:bg-blue-50 px-8 py-3 font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  "Generate"
+                )}
+              </Button>
             </section>
 
-            <section className="mb-10 rounded-2xl border border-border bg-card/60 p-6 shadow-sm backdrop-blur">
-              <div className="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Filter className="h-4 w-4" />
-                Filters
-              </div>
-
-              <div className="flex flex-col gap-6 lg:flex-row">
-                <div className="flex-1 space-y-3">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Subject
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {subjects.map((subject) => (
-                      <Button
-                        key={subject}
-                        variant={
-                          selectedSubject === subject ? "primary" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setSelectedSubject(subject)}
-                      >
-                        {subject}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex-1 space-y-3">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Difficulty
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {difficulties.map((difficulty) => (
-                      <Button
-                        key={difficulty}
-                        variant={
-                          selectedDifficulty === difficulty
-                            ? "primary"
-                            : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setSelectedDifficulty(difficulty)}
-                      >
-                        {difficulty}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+            <section className="mb-10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground">
+                  Your Quizzes
+                </h2>
+                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-slate-50 transition-colors">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                </button>
               </div>
             </section>
 
@@ -410,56 +358,44 @@ export default function QuizHubPage() {
                 {filteredQuizzes.map((quiz) => (
                   <Card
                     key={quiz.id}
-                    className="group border border-border transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
+                    className="group bg-white border border-border rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                   >
-                    <CardHeader>
+                    <CardHeader className="pb-4">
                       <div className="mb-3 flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {quiz.subject}
-                          </Badge>
-                          <Badge
-                            className={difficultyStyles[quiz.difficulty] || ""}
-                          >
-                            {quiz.difficulty}
-                          </Badge>
-                        </div>
+                        <Badge
+                          className={`text-xs font-semibold px-3 py-1 rounded-full ${difficultyStyles[quiz.difficulty] || ""
+                            }`}
+                        >
+                          {quiz.difficulty}
+                        </Badge>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteQuiz(quiz.id);
                           }}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:border-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors"
                           title="Delete quiz"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <CardTitle className="text-xl transition-colors group-hover:text-primary">
+                      <CardTitle className="text-xl font-bold transition-colors group-hover:text-blue-600">
                         {quiz.title}
                       </CardTitle>
-                      <CardDescription className="leading-relaxed">
-                        {quiz.description}
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <BookOpen className="h-4 w-4" />
-                          {quiz.questions} questions
-                        </span>
-                        <span className="inline-flex items-center gap-1">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
                           <Clock className="h-4 w-4" />
                           {quiz.duration}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Trophy className="h-4 w-4" />
-                        {quiz.completions.toLocaleString()} completions
+                        <span className="inline-flex items-center gap-1.5">
+                          <BookOpen className="h-4 w-4" />
+                          Oct {Math.floor(Math.random() * 28) + 1}, 2023
+                        </span>
                       </div>
                       <Button
-                        className="w-full"
-                        variant="primary"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl py-3 shadow-md hover:shadow-lg transition-all"
                         onClick={() => handleStartQuiz(quiz)}
                       >
                         Start Quiz

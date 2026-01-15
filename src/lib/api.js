@@ -128,8 +128,16 @@ export const quizAPI = {
   }
 }
 
+export const dashboardAPI = {
+  getStats: async () => {
+    return fetchWithAuth(`${API_URL}/dashboard/stats`)
+  },
+}
+
 export default {
   authAPI,
   interviewAPI,
   resourcesAPI,
+  quizAPI,
+  dashboardAPI,
 }
