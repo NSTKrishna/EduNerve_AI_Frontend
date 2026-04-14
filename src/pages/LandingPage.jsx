@@ -56,13 +56,12 @@ export default function LandingPage() {
     <>
       <GridBackgroundDemo />
       <div className="min-h-screen flex flex-col relative z-10 bg-gradient-to-b from-transparent to-muted/20">
-
         <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2 group">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
+                  <img src="../public/logo.png" alt="EduNerve AI Logo" className="h-8 w-8" />
                 </div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                   EduNerve AI
@@ -146,7 +145,6 @@ export default function LandingPage() {
         <section className="pt-20 sm:pt-28 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
-
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
                 Ace your next interview with{" "}
                 <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
@@ -155,8 +153,8 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl leading-relaxed">
-                Practice mock interviews with AI, take quizzes, and get
-                personalized feedback to land your dream job.
+                Practice mock interviews with AI and get personalized feedback
+                to land your dream job.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 w-full sm:w-auto">
@@ -171,14 +169,6 @@ export default function LandingPage() {
                     Get Started Free
                     <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
                   </span>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate("/quizzes")}
-                  className="w-full sm:w-auto h-12 px-8 text-base font-semibold border-2"
-                >
-                  Try a Quiz
                 </Button>
               </div>
 
@@ -222,120 +212,62 @@ export default function LandingPage() {
         </section>
 
         {/* Features Section */}
+        {/* Features Section */}
         <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-              {/* Interactive Quizzes Card */}
-              <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-blue-200 cursor-pointer bg-gradient-to-br from-white to-blue-50/30 overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/0 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <CardHeader className="relative pb-4">
-                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-blue-600/30">
-                    <BookOpen className="h-7 w-7 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl sm:text-3xl font-bold">
-                    Interactive Quizzes
-                  </CardTitle>
-                  <CardDescription className="text-base leading-relaxed pt-2">
-                    Test your knowledge with AI-generated quizzes. Get instant
-                    feedback and track progress.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="relative space-y-6">
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                      <div className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
-                      </div>
-                      <span className="group-hover/item:text-foreground transition-colors">
-                        AI-generated questions
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                      <div className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
-                      </div>
-                      <span className="group-hover/item:text-foreground transition-colors">
-                        Multiple difficulty levels
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                      <div className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
-                      </div>
-                      <span className="group-hover/item:text-foreground transition-colors">
-                        Instant scoring
-                      </span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 font-semibold shadow-md hover:shadow-lg transition-all group/btn"
-                    onClick={() =>
-                      navigate(isAuthenticated ? "/quizzes" : "/signup")
-                    }
-                  >
-                    <span className="flex items-center justify-center gap-2 w-full">
-                      Get Started
-                      <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                    </span>
-                  </Button>
-                </CardContent>
-              </Card>
+            <div className="flex justify-center">
+              <div className="w-full max-w-2xl">
+                {/* Mock Interviews Card */}
+                <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-green-200 cursor-pointer bg-gradient-to-br from-white to-green-50/30 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-600/0 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-              {/* Mock Interviews Card */}
-              <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-green-200 cursor-pointer bg-gradient-to-br from-white to-green-50/30 overflow-hidden relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-600/0 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <CardHeader className="relative pb-4">
-                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-green-600/30">
-                    <MessageSquare className="h-7 w-7 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl sm:text-3xl font-bold">
-                    Mock Interviews
-                  </CardTitle>
-                  <CardDescription className="text-base leading-relaxed pt-2">
-                    Practice with AI interviewers and get real-time feedback on
-                    your performance.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="relative space-y-6">
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                      <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                      </div>
-                      <span className="group-hover/item:text-foreground transition-colors">
+                  <CardHeader className="relative pb-4">
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-green-600/30">
+                      <MessageSquare className="h-7 w-7 text-white" />
+                    </div>
+
+                    <CardTitle className="text-2xl sm:text-3xl font-bold">
+                      Mock Interviews
+                    </CardTitle>
+
+                    <CardDescription className="text-base leading-relaxed pt-2">
+                      Practice with AI interviewers and get real-time feedback
+                      on your performance.
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="relative space-y-6">
+                    <ul className="space-y-3">
+                      <li className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                         Technical & behavioral
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                      <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                      </div>
-                      <span className="group-hover/item:text-foreground transition-colors">
+                      </li>
+
+                      <li className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                         Voice interaction
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                      <div className="flex-shrink-0 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                      </div>
-                      <span className="group-hover/item:text-foreground transition-colors">
+                      </li>
+
+                      <li className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                         Personalized feedback
+                      </li>
+                    </ul>
+
+                    <Button
+                      className="w-full bg-green-600 hover:bg-green-700 text-white h-11 font-semibold"
+                      onClick={() =>
+                        navigate(isAuthenticated ? "/interviews" : "/signup")
+                      }
+                    >
+                      <span className="flex items-center justify-center gap-2 w-full">
+                        Get Started
+                        <ArrowRight className="h-4 w-4" />
                       </span>
-                    </li>
-                  </ul>
-                  <Button
-                    className="w-full bg-green-600 hover:bg-green-700 text-white h-11 font-semibold shadow-md hover:shadow-lg transition-all group/btn"
-                    onClick={() =>
-                      navigate(isAuthenticated ? "/interviews" : "/signup")
-                    }
-                  >
-                    <span className="flex items-center justify-center gap-2 w-full">
-                      Get Started
-                      <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                    </span>
-                  </Button>
-                </CardContent>
-              </Card>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </section>
@@ -414,7 +346,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center justify-center space-y-4">
               <Link to="/" className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
+                  <img src='../public/logo.png' />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
                   EduNerve AI

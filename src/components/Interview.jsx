@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Vapi from "@vapi-ai/web";
 import { useLearner } from "../context/LearnerContext";
 import "../App.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const INTERVIEW_START_URL = `${API_URL}/interview/start-interview`;
+const INTERVIEW_COMPLETE_URL = `${API_URL}/interview/complete`;
+
 function Interview() {
+  const navigate = useNavigate();
   const { learnerProfile, refreshProfile } = useLearner();
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState(
-    "Fill out the form to start your personalized mock interview"
+    "Fill out the form to start your personalized mock interview",
   );
   const [vapiInstance, setVapiInstance] = useState(null);
-  const [interviewInfo, setInterviewInfo] = useState(null);
+  const [_interviewInfo, setInterviewInfo] = useState(null);
   const [interviewId, setInterviewId] = useState(null);
   const [transcript, setTranscript] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -195,10 +201,12 @@ function Interview() {
     // Request microphone permission explicitly
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop()); // Release the microphone
+      stream.getTracks().forEach((track) => track.stop()); // Release the microphone
     } catch (permError) {
       console.error("Microphone permission denied:", permError);
-      setStatus("Microphone access denied. Please allow microphone access in your browser settings to continue.");
+      setStatus(
+        "Microphone access denied. Please allow microphone access in your browser settings to continue.",
+      );
       setIsLoading(false);
       return;
     }
@@ -213,7 +221,7 @@ function Interview() {
     }
 
     try {
-      setStatus("Generating your personalized interview with AI (Gemini)...");
+      setStatus("Generating your personalized interview with AI (Groq)...");
       setTranscript([]);
 
       const token = localStorage.getItem("authToken");
@@ -223,18 +231,14 @@ function Interview() {
         return;
       }
 
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-      const res = await fetch(
-        `${API_URL}/interview/start-interview`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const res = await fetch(INTERVIEW_START_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
 
       let data;
       try {
@@ -257,7 +261,8 @@ function Interview() {
       setStep(2);
 
       // Use the key from server or fallback
-      const publicKey = data.publicKey || "963b4430-fefb-4d42-bc81-78b81277cf45";
+      const publicKey =
+        data.publicKey || "963b4430-fefb-4d42-bc81-78b81277cf45";
       console.log("Using Vapi Public Key:", publicKey);
 
       const vapi = new Vapi(publicKey);
@@ -269,7 +274,7 @@ function Interview() {
       vapi.on("call-start", () => {
         setIsConnected(true);
         setStatus(
-          `🎤 ${formData.interviewType.toUpperCase()} Interview in Progress!`
+          `🎤 ${formData.interviewType.toUpperCase()} Interview in Progress!`,
         );
 
         const startTime = Date.now();
@@ -292,8 +297,7 @@ function Interview() {
         if (interviewId && transcript.length > 0) {
           try {
             setStatus("Saving interview data and generating feedback...");
-            const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-            await fetch(`${API_URL}/interview/complete`, {
+            await fetch(INTERVIEW_COMPLETE_URL, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -304,15 +308,22 @@ function Interview() {
                 transcript,
                 duration: callDuration,
               }),
-            }).then(r => r.json()).then(d => {
-              if (d.success) {
-                refreshProfile();
-                setStatus("Interview completed successfully! Check your dashboard.");
-              } else {
-                setStatus("Interview completed. Feedback generation failed.");
-              }
-            });
-          } catch (e) { console.error(e); setStatus("Could not save feedback."); }
+            })
+              .then((r) => r.json())
+              .then((d) => {
+                if (d.success) {
+                  refreshProfile();
+                  setStatus(
+                    "Interview completed successfully! Check your dashboard.",
+                  );
+                } else {
+                  setStatus("Interview completed. Feedback generation failed.");
+                }
+              });
+          } catch (e) {
+            console.error(e);
+            setStatus("Could not save feedback.");
+          }
         } else {
           setStatus("Mock interview completed.");
         }
@@ -342,14 +353,19 @@ function Interview() {
 
       vapi.on("error", (error) => {
         console.error("VAPI Error Details:", JSON.stringify(error, null, 2));
-        setStatus(`Connection Error: ${error.errorMsg || error.message || "Unknown error"}`);
+        setStatus(
+          `Connection Error: ${error.errorMsg || error.message || "Unknown error"}`,
+        );
         setIsConnected(false);
       });
 
       try {
         // Option 1: Start with a pre-configured Assistant ID if provided
         if (data.assistantId) {
-          console.log("Starting Vapi call with Assistant ID:", data.assistantId);
+          console.log(
+            "Starting Vapi call with Assistant ID:",
+            data.assistantId,
+          );
           await vapi.start(data.assistantId);
         }
         // Option 2: Start with a minimal inline config (fallback)
@@ -362,7 +378,8 @@ function Interview() {
               messages: [
                 {
                   role: "system",
-                  content: data.systemPrompt || "You are a helpful interviewer.",
+                  content:
+                    data.systemPrompt || "You are a helpful interviewer.",
                 },
               ],
             },
@@ -374,7 +391,10 @@ function Interview() {
             firstMessage: `Hello! I'm your AI interviewer for the ${formData.role} position.`,
           };
 
-          console.log("Starting Vapi call with minimal fallback config:", callConfig);
+          console.log(
+            "Starting Vapi call with minimal fallback config:",
+            callConfig,
+          );
           await vapi.start(callConfig);
         }
       } catch (startError) {
@@ -401,29 +421,27 @@ function Interview() {
     if (interviewId && transcript.length > 0) {
       try {
         setStatus("Saving interview data and generating feedback...");
-        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-        const response = await fetch(
-          `${API_URL}/interview/complete`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-            body: JSON.stringify({
-              interviewId,
-              transcript,
-              duration: callDuration,
-            }),
-          }
-        );
+        const response = await fetch(INTERVIEW_COMPLETE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+          body: JSON.stringify({
+            interviewId,
+            transcript,
+            duration: callDuration,
+          }),
+        });
 
         const data = await response.json();
         if (data.success) {
           await refreshProfile(); // Refresh profile to update dashboard
           setStatus(
-            "Interview completed successfully! Check your dashboard for detailed feedback."
+            "Interview completed successfully! Check your dashboard for detailed feedback.",
           );
+          // Take the user back to the dashboard so they immediately see the updated stats + feedback
+          navigate("/dashboard", { replace: true });
         } else {
           setStatus("Interview stopped. Feedback generation failed.");
         }
@@ -482,9 +500,6 @@ function Interview() {
 
           <div className="bg-white rounded-2xl border border-border shadow-sm p-6 sm:p-8">
             <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 text-blue-600 text-sm">
-                1
-              </span>
               Configuration
             </h2>
 
@@ -516,10 +531,11 @@ function Interview() {
                     <button
                       key={type}
                       onClick={() => handleInputChange("interviewType", type)}
-                      className={`py-3 px-2 rounded-xl text-sm font-medium capitalize transition-all border ${formData.interviewType === type
+                      className={`py-3 px-2 rounded-xl text-sm font-medium capitalize transition-all border ${
+                        formData.interviewType === type
                           ? "bg-blue-600 text-white border-blue-600 shadow-md transform scale-[1.02]"
                           : "bg-white text-muted-foreground border-border hover:bg-slate-50"
-                        }`}
+                      }`}
                     >
                       {type}
                     </button>
@@ -530,17 +546,21 @@ function Interview() {
               {formData.role && (
                 <div>
                   <label className="block text-sm font-medium mb-3">
-                    Select Technologies <span className="text-xs text-muted-foreground font-normal">(Choose at least 1)</span>
+                    Select Technologies{" "}
+                    <span className="text-xs text-muted-foreground font-normal">
+                      (Choose at least 1)
+                    </span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {techOptions[formData.role]?.map((tech) => (
                       <button
                         key={tech}
                         onClick={() => toggleTechnology(tech)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${formData.technologies.includes(tech)
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                          formData.technologies.includes(tech)
                             ? "bg-green-100 text-green-700 border-green-200"
                             : "bg-white text-slate-600 border-border hover:bg-slate-50"
-                          }`}
+                        }`}
                       >
                         {tech}
                       </button>
@@ -558,11 +578,7 @@ function Interview() {
                 }
                 className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 mt-4"
               >
-                {isLoading ? (
-                  <>Starting Session...</>
-                ) : (
-                  <>Start Interview</>
-                )}
+                {isLoading ? <>Starting Session...</> : <>Start Interview</>}
               </button>
             </div>
           </div>
@@ -582,7 +598,8 @@ function Interview() {
             <h2 className="text-xl font-bold">Mock Interview</h2>
             <div className="bg-slate-100 px-4 py-1.5 rounded-full font-mono font-medium text-slate-700 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              {Math.floor(callDuration / 60)}:{(callDuration % 60).toString().padStart(2, "0")}
+              {Math.floor(callDuration / 60)}:
+              {(callDuration % 60).toString().padStart(2, "0")}
             </div>
           </div>
 
@@ -599,11 +616,18 @@ function Interview() {
             <div>
               <h3 className="font-bold text-lg">{formData.role}</h3>
               <p className="text-sm text-muted-foreground capitalize">
-                {formData.interviewType} Interview • {formData.technologies.slice(0, 3).join(", ")}{formData.technologies.length > 3 && ` +${formData.technologies.length - 3}`}
+                {formData.interviewType} Interview •{" "}
+                {formData.technologies.slice(0, 3).join(", ")}
+                {formData.technologies.length > 3 &&
+                  ` +${formData.technologies.length - 3}`}
               </p>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${isConnected ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-              <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-600" : "bg-yellow-600 animate-pulse"}`}></div>
+            <div
+              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${isConnected ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-600" : "bg-yellow-600 animate-pulse"}`}
+              ></div>
               {isConnected ? "Active" : "Connecting..."}
             </div>
           </div>
@@ -612,8 +636,12 @@ function Interview() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-[400px]">
             {/* AI Avatar */}
             <div className="bg-white border border-border rounded-2xl flex flex-col items-center justify-center p-8 shadow-sm relative overflow-hidden group">
-              <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 transition-all duration-300 ${isSpeaking ? "bg-blue-100 scale-110" : "bg-slate-50"}`}>
-                <div className={`text-4xl transition-all duration-300 ${isSpeaking ? "scale-110" : "scale-100"}`}>
+              <div
+                className={`w-32 h-32 rounded-full flex items-center justify-center mb-6 transition-all duration-300 ${isSpeaking ? "bg-blue-100 scale-110" : "bg-slate-50"}`}
+              >
+                <div
+                  className={`text-4xl transition-all duration-300 ${isSpeaking ? "scale-110" : "scale-100"}`}
+                >
                   🎙️
                 </div>
               </div>
@@ -633,9 +661,7 @@ function Interview() {
             {/* User Avatar */}
             <div className="bg-white border border-border rounded-2xl flex flex-col items-center justify-center p-8 shadow-sm">
               <div className="w-32 h-32 rounded-full bg-blue-600/10 flex items-center justify-center mb-6">
-                <div className="text-4xl text-blue-600">
-                  👤
-                </div>
+                <div className="text-4xl text-blue-600">👤</div>
               </div>
               <h3 className="font-bold text-lg">You</h3>
               <p className="text-sm text-muted-foreground mt-1">

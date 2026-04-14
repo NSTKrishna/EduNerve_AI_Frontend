@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
 import { useLearner } from "../context/LearnerContext";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
@@ -12,9 +11,8 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { signup, loginWithGoogle, isAuthenticated } = useLearner();
+  const { signup, isAuthenticated } = useLearner();
   const navigate = useNavigate();
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -50,23 +48,6 @@ export default function SignUpPage() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setError("");
-
-    if (!credentialResponse?.credential) {
-      setError("Google sign-up failed. Please try again.");
-      return;
-    }
-
-    const result = await loginWithGoogle(credentialResponse.credential);
-    if (result.success) {
-      navigate("/dashboard");
-      return;
-    }
-
-    setError(result.error || "Google sign-up failed. Please try again.");
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-12">
       {/* Back to Home Button */}
@@ -83,7 +64,7 @@ export default function SignUpPage() {
         <div className="flex flex-col items-center text-center mb-8 space-y-4">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
-              <Sparkles className="h-6 w-6 text-white" />
+              <img src="../public/logo.png" alt="EduNerve AI Logo" className="h-8 w-8" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
               EduNerve AI
@@ -162,31 +143,6 @@ export default function SignUpPage() {
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
-
-          {googleClientId && (
-            <div className="mt-6">
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-3 text-muted-foreground font-medium">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => setError("Google sign-up was cancelled.")}
-                  theme="outline"
-                  size="large"
-                  width="100%"
-                />
-              </div>
-            </div>
-          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
