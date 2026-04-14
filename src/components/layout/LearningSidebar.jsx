@@ -42,7 +42,7 @@ export default function LearningSidebar({ open = false, onClose }) {
           {/* Logo Section */}
           <div className="flex h-16 items-center gap-2 border-b border-border px-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-md">
-              <img src="../public/logo.png" alt="EduNerve AI Logo" />
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
               <p className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">

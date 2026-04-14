@@ -57,7 +57,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center text-center mb-8 space-y-4">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
-              <img src="../public/logo.png" alt="EduNerve AI Logo" className="h-8 w-8" />
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
               EduNerve AI
