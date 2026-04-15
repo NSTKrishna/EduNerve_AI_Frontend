@@ -1,49 +1,63 @@
-import { useNavigate } from "react-router-dom"
-import { useState, useRef, useEffect } from "react"
-import { useLearner } from "../../context/LearnerContext"
+import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useLearner } from "../../context/LearnerContext";
 
 export default function Navbar() {
-  const { isAuthenticated, learnerProfile, authUser, logout } = useLearner()
-  const navigate = useNavigate()
-  const [showDropdown, setShowDropdown] = useState(false)
-  const dropdownRef = useRef(null)
+  const { isAuthenticated, learnerProfile, authUser, logout, tokens } =
+    useLearner();
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false)
+        setShowDropdown(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
-    logout()
-    setShowDropdown(false)
-    navigate("/login")
-  }
+    logout();
+    setShowDropdown(false);
+    navigate("/login");
+  };
 
   if (!isAuthenticated || !learnerProfile) {
-    return null
+    return null;
   }
 
-  const userAvatar = authUser?.picture || learnerProfile?.avatar
-  const userName = learnerProfile?.name || "Learner"
-  const userInitials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+  const userAvatar = authUser?.picture || learnerProfile?.avatar;
+  const userName = learnerProfile?.name || "Learner";
+  const userInitials = userName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-end h-16">
           <div className="flex items-center gap-4">
+            {tokens !== null && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium text-sm">
+                <span>🪙</span>
+                <span>{tokens} Tokens</span>
+              </div>
+            )}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <span className="text-sm text-muted-foreground hidden sm:block">{userName}</span>
+                <span className="text-sm text-muted-foreground hidden sm:block">
+                  {userName}
+                </span>
                 {userAvatar ? (
                   <img
                     src={userAvatar}
@@ -60,13 +74,17 @@ export default function Navbar() {
               {showDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
                   <div className="px-4 py-2 border-b border-border">
-                    <p className="text-sm font-medium text-foreground">{userName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{learnerProfile?.email}</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {userName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {learnerProfile?.email}
+                    </p>
                   </div>
                   <button
                     onClick={() => {
-                      setShowDropdown(false)
-                      navigate("/dashboard")
+                      setShowDropdown(false);
+                      navigate("/dashboard");
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors cursor-pointer"
                   >
@@ -85,5 +103,5 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
-  )
+  );
 }

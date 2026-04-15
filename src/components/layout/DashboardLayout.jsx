@@ -7,7 +7,7 @@ import { useLearner } from "../../context/LearnerContext";
 
 export default function DashboardLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { learnerProfile, authUser } = useLearner();
+    const { learnerProfile, authUser  } = useLearner();
 
     const userName = learnerProfile?.name || authUser?.name || "User";
     const userInitials = userName

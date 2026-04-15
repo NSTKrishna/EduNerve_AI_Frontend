@@ -18,7 +18,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, BookOpen, MessageSquare } from "lucide-react";
+import { TrendingUp, BookOpen, MessageSquare, Coins } from "lucide-react";
 
 const normalizeScoreToPercent = (value) => {
   if (typeof value !== "number" || Number.isNaN(value)) return null;
@@ -37,7 +37,7 @@ const chartBlue = "#2563eb"; // tailwind blue-600
 const chartBlueLight = "#60a5fa"; // tailwind blue-400
 
 export function OverviewContent() {
-  const { learnerProfile } = useLearner();
+  const { learnerProfile, tokens, fetchTokens } = useLearner();
   const [stats, setStats] = useState({
     avgScore: 0,
     totalInterviews: 0,
@@ -70,6 +70,7 @@ export function OverviewContent() {
     };
 
     fetchDashboardStats();
+    fetchTokens(); // Ensure tokens are perfectly synced on dashboard load
   }, []);
 
   useEffect(() => {
@@ -120,7 +121,25 @@ export function OverviewContent() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Available Tokens
+            </CardTitle>
+            <Coins className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {tokens !== null ? tokens : "..."} 🪙
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 text-blue-600 font-medium">
+              Ready for {tokens !== null ? Math.floor(tokens / 10) : 0}{" "}
+              interviews
+            </p>
+          </CardContent>
+        </Card>
+
         <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Score</CardTitle>

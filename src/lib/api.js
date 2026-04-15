@@ -56,6 +56,10 @@ export const authAPI = {
       body: JSON.stringify(data),
     });
   },
+
+  getTokens: async () => {
+    return fetchWithAuth(`${API_URL}/token`);
+  },
 };
 
 export const interviewAPI = {
@@ -82,33 +86,6 @@ export const interviewAPI = {
   },
 };
 
-export const resourcesAPI = {
-  getResources: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return fetchWithAuth(
-      `${API_URL}/resource${queryString ? `?${queryString}` : ""}`,
-    );
-  },
-
-  searchResources: async (query) => {
-    return fetchWithAuth(
-      `${API_URL}/resource/search?q=${encodeURIComponent(query)}`,
-    );
-  },
-
-  addResource: async (resource) => {
-    return fetchWithAuth(`${API_URL}/resource`, {
-      method: "POST",
-      body: JSON.stringify(resource),
-    });
-  },
-};
-
-// quiz removed
-
-// NOTE: dashboardAPI is left as-is because we still need a way to get stats
-// If the backend doesn't have this, it should be added, or we have to construct
-// it entirely on the frontend using interview history and profile data.
 export const dashboardAPI = {
   getStats: async () => {
     return fetchWithAuth(`${API_URL}/auth/dashboard`);
@@ -118,6 +95,5 @@ export const dashboardAPI = {
 export default {
   authAPI,
   interviewAPI,
-  resourcesAPI,
   dashboardAPI,
 };

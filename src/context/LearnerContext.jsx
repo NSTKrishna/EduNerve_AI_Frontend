@@ -8,7 +8,26 @@ export function LearnerProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [learnerProfile, setLearnerProfile] = useState(null);
+  const [tokens, setTokens] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchTokens = async () => {
+    try {
+      const response = await authAPI.getTokens();
+      console.log("Token response:", response);
+      if (response && response.tokensRemaining !== undefined) {
+        setTokens(response.tokensRemaining);
+      }
+    } catch (error) {
+      console.error("Failed to fetch tokens:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTokens();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -286,6 +305,7 @@ export function LearnerProvider({ children }) {
     isAuthenticated,
     authUser,
     learnerProfile,
+    tokens,
     loading,
     login,
     signup,
@@ -294,6 +314,8 @@ export function LearnerProvider({ children }) {
     // completeQuiz removed
     saveInterviewResult,
     refreshProfile,
+    fetchTokens,
+    setTokens,
   };
 
   return (

@@ -10,7 +10,8 @@ const INTERVIEW_COMPLETE_URL = `${API_URL}/interview/complete`;
 
 function Interview() {
   const navigate = useNavigate();
-  const { learnerProfile, refreshProfile } = useLearner();
+  const { learnerProfile, refreshProfile, fetchTokens, tokens, setTokens } =
+    useLearner();
   const [step, setStep] = useState(1);
   const [status, setStatus] = useState(
     "Fill out the form to start your personalized mock interview",
@@ -186,6 +187,16 @@ function Interview() {
   };
 
   const startInterview = async () => {
+    if (tokens !== null && tokens < 10) {
+      setStatus(
+        "Not enough tokens to start the interview. Please purchase a top-up.",
+      );
+      alert(
+        "Not enough tokens to start the interview. Please purchase a top-up.",
+      );
+      return;
+    }
+
     if (!formData.role) {
       setStatus("Please select a role");
       return;
@@ -251,9 +262,20 @@ function Interview() {
       }
 
       if (!res.ok) {
-        setStatus(data?.error || "Server error");
+        if (res.status === 400 && data?.error?.includes("Token")) {
+          const errMsg =
+            "Not enough tokens to start the interview. Please purchase a top-up.";
+          setStatus(errMsg);
+          alert(errMsg);
+        } else {
+          setStatus(data?.error || "Server error");
+        }
         setIsLoading(false);
         return;
+      }
+
+      if (tokens !== null) {
+        setTokens((prev) => (prev !== null ? prev - 10 : prev));
       }
 
       setInterviewInfo(data.interviewConfig);
@@ -313,6 +335,7 @@ function Interview() {
               .then((d) => {
                 if (d.success) {
                   refreshProfile();
+                  fetchTokens();
                   setStatus(
                     "Interview completed successfully! Check your dashboard.",
                   );
@@ -437,6 +460,7 @@ function Interview() {
         const data = await response.json();
         if (data.success) {
           await refreshProfile(); // Refresh profile to update dashboard
+          await fetchTokens();
           setStatus(
             "Interview completed successfully! Check your dashboard for detailed feedback.",
           );

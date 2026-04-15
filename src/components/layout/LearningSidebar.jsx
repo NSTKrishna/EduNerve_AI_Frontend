@@ -17,7 +17,7 @@ const links = [
 
 export default function LearningSidebar({ open = false, onClose }) {
   const location = useLocation();
-  const { logout } = useLearner();
+  const { logout  } = useLearner();
 
   const handleLogout = () => {
     logout();
