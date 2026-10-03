@@ -1,92 +1,48 @@
 # EduNerve AI Frontend
 
-Welcome to the frontend repository for **EduNerve AI**, an intelligent, AI-powered educational platform designed to enhance the learning experience. This repository contains a modern React application built with Vite, featuring interactive dashboards, quizzes, and mock interview practice.
+React 19 + Vite + Tailwind CSS 4 client for EduNerve AI: practice voice mock interviews with an AI interviewer (Vapi), then review scored feedback, transcripts and your progress.
 
-## 🚀 Features
+## Features
 
-- **Interactive Dashboard:** Track learning progress with intuitive charts (powered by Recharts).
-- **AI-Powered Assessments:**
-  - **Quiz Hub:** Take dynamic quizzes and review detailed results.
-  - **Interview Practice:** Participate in mock interviews with AI feedback (powered by Vapi AI).
-- **Authentication:** Secure user login and signup, including Google OAuth integration.
-- **Responsive UI:** Modern, accessible, and responsive styling built with Tailwind CSS and Radix UI components.
-- **Smooth Animations:** Engaging user interfaces using Framer Motion.
+- **Voice mock interviews** — pick a role, interview type and technologies; talk to the AI with live captions.
+- **Interview report** — scores out of 10, strengths, areas to improve, tips and the full transcript.
+- **Dashboard** — token balance, averages, score trend chart and recent interviews.
+- **History** — filterable, paginated list of every interview.
+- **Settings** — profile (role, experience, skills), token history, password change, account deletion.
 
-## 🛠️ Tech Stack
+## Run locally
 
-- **Framework:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
-- **Routing:** [React Router](https://reactrouter.com/)
-- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
-- **UI Components:** [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/) (Icons)
-- **Animations:** [Framer Motion](https://www.framer.com/motion/)
-- **Data Visualization:** [Recharts](https://recharts.org/)
-- **Auth:** [React Google OAuth](https://github.com/MomenSherif/react-oauth)
-
-## 📁 Project Structure
-
-```text
-src/
-├── assets/          # Static assets (images, icons)
-├── components/      # Reusable UI components
-│   ├── common/      # Generic buttons, inputs, badges, etc.
-│   ├── dashboard/   # Dashboard specific widgets (Stats, Cards)
-│   ├── layout/      # Navbar, Sidebar, Page Layouts
-│   ├── quiz/        # Quiz taking and result views
-│   └── ui/          # Core component primitives (shadcn-like)
-├── context/         # React Context for state management
-├── data/            # Mock data and structural content
-├── lib/             # Utility functions and API clients
-└── pages/           # Main route components (Home, Login, Dashboard, etc.)
+```bash
+npm install
+cp .env.example .env     # VITE_API_URL must point at the backend, including /api
+npm run dev
 ```
 
-## ⚙️ Getting Started
+Needs the [backend](https://github.com/khuswant18/EduNerve_AI_Backend) running (default `http://localhost:3000`). Allow microphone access when starting an interview.
 
-### Prerequisites
+| Script | |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build into `dist/` |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest |
 
-- Node.js (v18 or higher recommended)
-- npm or yarn
+## Project layout
 
-### Installation
+```
+src/
+├── lib/api.js           # the only place that calls the backend (ApiError, typed endpoints)
+├── lib/format.js        # score / duration / date formatting (scores are 0-10)
+├── context/             # auth + token balance (LearnerContext)
+├── hooks/               # useVapiInterview (call + transcript + submit), useAsync
+├── pages/               # Landing, Login, SignUp, Dashboard, Interview, Report, History, Settings
+└── components/          # layout, interview/, dashboard/, common/, ui/
+```
 
-1. **Clone the repository:**
+## Backend contract
 
-   ```bash
-   git clone https://github.com/NSTKrishna/EduNerve_AI_Frontend.git
-   cd EduNerve_AI_Frontend
-   ```
+The API shape (endpoints, error codes, score scale) is documented in the backend repo's `API_CONTRACT.md`. Failed requests throw `ApiError` with a stable `code`; switch on that, never on the message text.
 
-2. **Install dependencies:**
+## Deploy
 
-   ```bash
-   npm install
-   ```
-
-3. **Environment Setup:**
-   Create a `.env` file in the root directory and add your required environment variables (e.g., Google OAuth App ID, Vapi API keys, backend API URLs).
-
-4. **Start the development server:**
-
-   ```bash
-   npm run dev
-   ```
-
-5. **Build for production:**
-
-   ```bash
-   npm run build
-   ```
-
-## 📜 Scripts
-
-- `npm run dev`: Starts the local development server.
-- `npm run build`: Bundles the app for production.
-- `npm run preview`: Previews the production build locally.
-- `npm run lint`: Runs ESLint to check for code quality issues.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License.
+Vercel: set `VITE_API_URL` to the deployed backend URL (ending in `/api`). `vercel.json` rewrites every route to `index.html` for client-side routing. Add the deployed origin to the backend's `CORS_ORIGINS` if it isn't `*.vercel.app` for this project.
