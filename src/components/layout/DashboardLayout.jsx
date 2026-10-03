@@ -1,60 +1,70 @@
 import { useState } from "react";
-import { Menu, Search, Bell } from "lucide-react";
-import { Outlet } from "react-router-dom";
-import LearningSidebar from "./LearningSidebar";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { Menu } from "lucide-react";
+import LearningSidebar, { NAV_LINKS, isNavActive } from "./LearningSidebar";
 import Button from "../common/Button";
+import ThemeToggle from "../common/ThemeToggle";
+import Avatar from "../common/Avatar";
 import { useLearner } from "../../context/LearnerContext";
 
+const TITLES = { "/interviews": "AI Interview" };
+
+function currentTitle(pathname) {
+  if (pathname.startsWith("/interviews/")) return "Report";
+  const match = NAV_LINKS.find((link) => isNavActive(link.to, pathname));
+  return TITLES[pathname] || match?.label || "";
+}
+
 export default function DashboardLayout() {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { learnerProfile, authUser  } = useLearner();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, tokens } = useLearner();
+  const { pathname } = useLocation();
+  const userName = user?.name || "User";
 
-    const userName = learnerProfile?.name || authUser?.name || "User";
-    const userInitials = userName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
+  return (
+    <div className="min-h-screen bg-paper">
+      <LearningSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-            <LearningSidebar
-                open={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-            />
+      <div className="flex min-h-screen flex-col lg:ml-[248px]">
+        <header className="sticky top-0 z-20 flex h-[72px] shrink-0 items-center gap-3 border-b border-rule bg-paper/92 px-4 backdrop-blur lg:px-10">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open navigation"
+            aria-expanded={sidebarOpen}
+            className="lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
 
-            <div className="lg:ml-72 flex min-h-screen flex-col">
-                <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-white/80 backdrop-blur-sm px-4 lg:px-8 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="lg:hidden inline-flex items-center gap-2 hover:bg-slate-100"
-                            onClick={() => setSidebarOpen(true)}
-                        >
-                            <Menu className="h-5 w-5" />
-                        </Button>
-                    </div>
+          {/* Without this the only cue to where you are is the page h1, which scrolls away. */}
+          <p className="truncate font-mono text-[11px] uppercase tracking-[0.14em] text-ink-muted lg:hidden">
+            {currentTitle(pathname)}
+          </p>
 
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:block text-right">
-                                <p className="text-sm font-semibold text-foreground">
-                                    {userName}
-                                </p>
-                            </div>
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-sm font-semibold ring-2 ring-blue-100">
-                                {userInitials}
-                            </div>
-                        </div>
-                    </div>
-                </header>
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            {tokens !== null && (
+              <Link
+                to="/settings"
+                className="group inline-flex items-baseline gap-1.5 rounded-md px-2.5 py-1.5 transition-colors hover:bg-sunk"
+              >
+                <span className="tabular font-mono text-sm font-medium text-ink">{tokens}</span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-muted">
+                  tokens
+                </span>
+              </Link>
+            )}
+            <ThemeToggle />
+            <span className="hidden text-sm text-ink sm:block">{userName}</span>
+            <Avatar name={userName} />
+          </div>
+        </header>
 
-                <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-                    <Outlet />
-                </main>
-            </div>
-        </div>
-    );
+        <main id="main" tabIndex={-1} className="flex-1 px-4 py-8 lg:px-10 lg:py-10">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
 }

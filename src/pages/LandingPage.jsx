@@ -1,365 +1,272 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Check, LayoutDashboard, Target } from "lucide-react";
 import { useLearner } from "../context/LearnerContext";
-import Button from "../components/common/Button";
-import { GridBackgroundDemo } from "../components/grid";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "../components/ui/card";
-import {
-  ArrowRight,
-  BookOpen,
-  MessageSquare,
-  CheckCircle2,
-  BarChart3,
-  Clock,
-  Sparkles,
-} from "lucide-react";
+import Logo from "../components/brand/Logo";
+import Avatar from "../components/common/Avatar";
+import ButtonLink from "../components/common/ButtonLink";
+import ThemeToggle from "../components/common/ThemeToggle";
+
+/*
+ * The sequence carries the argument, so the steps are numbered and ruled rather
+ * than boxed into equal cards.
+ */
+const STEPS = [
+  {
+    title: "Name the job",
+    body: "Pick the role you're interviewing for and the technologies you want to be asked about. That selection is what the interviewer is built from — not a generic question bank.",
+  },
+  {
+    title: "Say it out loud",
+    body: "A short spoken interview with follow-up questions, timed by the session itself. Your answers are transcribed as you go, so nothing depends on remembering what you said.",
+  },
+  {
+    title: "Read it back marked up",
+    body: "Scored on technical depth, communication and problem solving, with the marks written in the margin beside the conversation they came from.",
+  },
+];
+
+function AccountMenu({ user, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = (event) => {
+      if (!containerRef.current?.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const name = user?.name || "User";
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        onClick={() => setOpen((shown) => !shown)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="flex items-center gap-2.5 rounded-full p-0.5 transition-opacity hover:opacity-80"
+      >
+        <span className="hidden text-sm text-ink sm:block">{name}</span>
+        <Avatar name={name} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="mark-in absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-md border border-rule-strong bg-sheet py-1.5"
+        >
+          <div className="border-b border-rule px-4 py-3">
+            <p className="truncate text-sm text-ink">{name}</p>
+            <p className="mt-0.5 truncate font-mono text-[11px] text-ink-faint">{user?.email}</p>
+          </div>
+          <Link
+            to="/dashboard"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-sunk"
+          >
+            <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+            Dashboard
+          </Link>
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-ink-muted transition-colors hover:bg-red-wash hover:text-red-ink"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/*
+ * The proof: a specimen of what comes back, built the way the real report is.
+ * Labelled a sample so nobody mistakes it for their own data, and carrying no
+ * claim about anyone's results.
+ */
+function Specimen() {
+  return (
+    <figure className="w-full">
+      <figcaption className="mb-4 flex items-baseline justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-faint">
+        <span>Sample report</span>
+        <span aria-hidden="true">EN-4K71</span>
+      </figcaption>
+
+      <div className="rounded-lg border border-rule bg-sheet p-6">
+        <div className="flex items-start justify-between gap-6 border-b border-rule pb-5">
+          <div>
+            <p className="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
+              Backend Developer
+            </p>
+            <p className="mt-1 text-sm text-ink-muted">Technical · Node.js, PostgreSQL</p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="tabular font-display text-[2.5rem] font-semibold leading-none tracking-[-0.03em] text-mark-green">
+              8.1
+            </p>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted">
+              Strong
+            </p>
+          </div>
+        </div>
+
+        <div className="relative mt-5 space-y-4 pl-5">
+          <span aria-hidden="true" className="absolute inset-y-0 left-0 w-px bg-mark-red/40" />
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-mark-blue">You</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink">
+              I&apos;d put an index on the lookup column first, then check the query plan before
+              changing anything else.
+            </p>
+          </div>
+        </div>
+
+        <ul className="mt-6 space-y-2.5 border-t border-rule pt-5">
+          <li className="flex gap-2.5 text-sm text-ink">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-mark-green" aria-hidden="true" />
+            Reached for measurement before optimising
+          </li>
+          <li className="flex gap-2.5 text-sm text-ink">
+            <Target className="mt-0.5 h-4 w-4 shrink-0 text-mark-ochre" aria-hidden="true" />
+            Name the trade-off an index costs on writes
+          </li>
+        </ul>
+      </div>
+    </figure>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, learnerProfile, authUser, logout } = useLearner();
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const { isAuthenticated, user, logout } = useLearner();
 
   const handleLogout = () => {
     logout();
-    setShowDropdown(false);
     navigate("/");
   };
 
-  const userAvatar = authUser?.picture || learnerProfile?.avatar;
-  const userName = learnerProfile?.name || authUser?.name || "User";
-  const userInitials = userName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const primaryHref = isAuthenticated ? "/dashboard" : "/signup";
 
   return (
-    <>
-      <GridBackgroundDemo />
-      <div className="min-h-screen flex flex-col relative z-10 bg-gradient-to-b from-transparent to-muted/20">
-        <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <Link to="/" className="flex items-center gap-2 group">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                  EduNerve AI
-                </span>
-              </Link>
+    <div className="min-h-screen bg-paper">
+      <header className="sticky top-0 z-50 border-b border-rule bg-paper/92 backdrop-blur">
+        <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-4 py-4 sm:px-8">
+          <Logo size="sm" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            {isAuthenticated ? (
+              <AccountMenu user={user} onLogout={handleLogout} />
+            ) : (
+              <>
+                <ButtonLink to="/login" variant="ghost" className="hidden sm:inline-flex">
+                  Log in
+                </ButtonLink>
+                <ButtonLink to="/signup">Get started</ButtonLink>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
 
-              <div className="flex items-center gap-3">
-                {!isAuthenticated ? (
-                  <>
-                    <Button
-                      onClick={() => navigate("/login")}
-                      variant="ghost"
-                      className="hidden sm:inline-flex"
-                    >
-                      Log In
-                    </Button>
-                    <Button
-                      onClick={() => navigate("/signup")}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Get Started
-                    </Button>
-                  </>
-                ) : (
-                  <div className="relative" ref={dropdownRef}>
-                    <button
-                      onClick={() => setShowDropdown(!showDropdown)}
-                      className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-                    >
-                      <span className="text-sm font-medium text-foreground hidden sm:block">
-                        {userName}
-                      </span>
-                      {userAvatar ? (
-                        <img
-                          src={userAvatar}
-                          alt={userName}
-                          className="w-9 h-9 rounded-full border-2 border-blue-600 object-cover cursor-pointer ring-2 ring-blue-100"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center text-sm font-semibold cursor-pointer ring-2 ring-blue-100">
-                          {userInitials}
-                        </div>
-                      )}
-                    </button>
+      <main id="main" tabIndex={-1}>
+        <section className="mx-auto max-w-[1100px] px-4 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+            <div className="relative pl-6">
+              <span aria-hidden="true" className="absolute inset-y-2 left-0 w-px bg-mark-red/40" />
 
-                    {showDropdown && (
-                      <div className="absolute right-0 mt-3 w-56 bg-card border border-border rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="px-4 py-3 border-b border-border">
-                          <p className="text-sm font-semibold text-foreground">
-                            {userName}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            {learnerProfile?.email || authUser?.email}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setShowDropdown(false);
-                            navigate("/dashboard");
-                          }}
-                          className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center gap-2"
-                        >
-                          <BarChart3 className="h-4 w-4" />
-                          Dashboard
-                        </button>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                        >
-                          Logout
-                        </button>
-                      </div>
-                    )}
-                  </div>
+              <h1 className="font-display text-[clamp(2.75rem,6.5vw,4.25rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-ink">
+                Practise the interview you&apos;re actually going to
+              </h1>
+
+              <p className="mt-6 max-w-[46ch] text-lg leading-relaxed text-ink-muted">
+                Pick your role and your stack. Talk through a real question out loud. Get it back
+                marked up, the way a good coach would hand it to you.
+              </p>
+
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <ButtonLink to={primaryHref} size="lg" className="group">
+                  {isAuthenticated ? "Go to dashboard" : "Start practising free"}
+                  <ArrowRight
+                    className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </ButtonLink>
+                {!isAuthenticated && (
+                  <ButtonLink to="/login" size="lg" variant="outline">
+                    I already have an account
+                  </ButtonLink>
                 )}
               </div>
             </div>
-          </div>
-        </header>
 
-        <section className="pt-20 sm:pt-28 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
-                Ace your next interview with{" "}
-                <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                  AI practice
+            <Specimen />
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-[1100px] px-4 pb-14 sm:px-8 sm:pb-16">
+          <h2 className="mb-10 font-mono text-[11px] uppercase tracking-[0.14em] text-ink-muted">
+            How it works
+          </h2>
+
+          <ol className="max-w-[760px]">
+            {STEPS.map(({ title, body }, index) => (
+              <li key={title} className="flex gap-6 border-t border-rule py-7 sm:gap-8">
+                <span className="tabular shrink-0 pt-1 font-mono text-[11px] text-ink-faint">
+                  {String(index + 1).padStart(2, "0")}
                 </span>
-              </h1>
+                <div>
+                  <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
+                    {title}
+                  </h3>
+                  <p className="mt-2 max-w-[58ch] leading-relaxed text-ink-muted">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl leading-relaxed">
-                Practice mock interviews with AI and get personalized feedback
-                to land your dream job.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 w-full sm:w-auto">
-                <Button
-                  size="lg"
-                  onClick={() =>
-                    navigate(isAuthenticated ? "/dashboard" : "/signup")
-                  }
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 text-base font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition-all group/btn"
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    Get Started Free
-                    <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
-                  </span>
-                </Button>
-              </div>
-
-              {/* Stats Section */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 pt-12 w-full max-w-4xl">
-                <div className="flex flex-col items-center space-y-2 p-4 rounded-xl border border-border bg-card/50 hover:bg-card transition-colors">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600">
-                    7+
-                  </div>
-                  <div className="text-sm text-muted-foreground font-medium">
-                    Job Roles
-                  </div>
-                </div>
-                <div className="flex flex-col items-center space-y-2 p-4 rounded-xl border border-border bg-card/50 hover:bg-card transition-colors">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600">
-                    40+
-                  </div>
-                  <div className="text-sm text-muted-foreground font-medium">
-                    Technologies
-                  </div>
-                </div>
-                <div className="flex flex-col items-center space-y-2 p-4 rounded-xl border border-border bg-card/50 hover:bg-card transition-colors">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600">
-                    AI
-                  </div>
-                  <div className="text-sm text-muted-foreground font-medium">
-                    Powered
-                  </div>
-                </div>
-                <div className="flex flex-col items-center space-y-2 p-4 rounded-xl border border-border bg-card/50 hover:bg-card transition-colors">
-                  <div className="text-3xl sm:text-4xl font-bold text-blue-600">
-                    24/7
-                  </div>
-                  <div className="text-sm text-muted-foreground font-medium">
-                    Available
-                  </div>
-                </div>
-              </div>
+        <section className="mx-auto max-w-[1100px] px-4 pb-24 sm:px-8 sm:pb-28">
+          <div className="relative max-w-[760px] border-t border-rule pt-12 pl-6">
+            <span aria-hidden="true" className="absolute bottom-0 left-0 top-10 w-px bg-mark-red/40" />
+            <h2 className="max-w-[20ch] font-display text-[clamp(2rem,4.5vw,2.75rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-ink">
+              Your next interview shouldn&apos;t be the first time you say it out loud
+            </h2>
+            <div className="mt-8">
+              <ButtonLink to={primaryHref} size="lg" className="group">
+                {isAuthenticated ? "Go to dashboard" : "Start practising free"}
+                <ArrowRight
+                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </ButtonLink>
             </div>
           </div>
         </section>
+      </main>
 
-        {/* Features Section */}
-        {/* Features Section */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-center">
-              <div className="w-full max-w-2xl">
-                {/* Mock Interviews Card */}
-                <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-green-200 cursor-pointer bg-gradient-to-br from-white to-green-50/30 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-600/0 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <CardHeader className="relative pb-4">
-                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-green-600/30">
-                      <MessageSquare className="h-7 w-7 text-white" />
-                    </div>
-
-                    <CardTitle className="text-2xl sm:text-3xl font-bold">
-                      Mock Interviews
-                    </CardTitle>
-
-                    <CardDescription className="text-base leading-relaxed pt-2">
-                      Practice with AI interviewers and get real-time feedback
-                      on your performance.
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="relative space-y-6">
-                    <ul className="space-y-3">
-                      <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Technical & behavioral
-                      </li>
-
-                      <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Voice interaction
-                      </li>
-
-                      <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        Personalized feedback
-                      </li>
-                    </ul>
-
-                    <Button
-                      className="w-full bg-green-600 hover:bg-green-700 text-white h-11 font-semibold"
-                      onClick={() =>
-                        navigate(isAuthenticated ? "/interviews" : "/signup")
-                      }
-                    >
-                      <span className="flex items-center justify-center gap-2 w-full">
-                        Get Started
-                        <ArrowRight className="h-4 w-4" />
-                      </span>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Additional Features */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-2xl hover:bg-white transition-colors">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-600/30">
-                  <Sparkles className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold">AI-Powered Learning</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Adaptive content that matches your skill level and learning
-                  pace.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-2xl hover:bg-white transition-colors">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-600 to-orange-700 flex items-center justify-center shadow-lg shadow-orange-600/30">
-                  <BarChart3 className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold">Track Progress</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Detailed analytics to visualize your strengths and areas to
-                  improve.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-center text-center space-y-4 p-6 rounded-2xl hover:bg-white transition-colors">
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-pink-600 to-pink-700 flex items-center justify-center shadow-lg shadow-pink-600/30">
-                  <Clock className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold">Learn Anytime</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Practice 24/7 at your own pace with instant AI feedback.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 sm:p-12 shadow-2xl">
-              <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,transparent,black)]" />
-              <div className="relative flex flex-col items-center text-center space-y-6">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
-                  Ready to ace your next interview?
-                </h2>
-                <p className="text-lg sm:text-xl text-blue-100 max-w-2xl">
-                  Start practicing today and improve your interview skills.
-                </p>
-                <Button
-                  size="lg"
-                  onClick={() =>
-                    navigate(isAuthenticated ? "/dashboard" : "/signup")
-                  }
-                  className="text-blue-600 hover:bg-blue-50 h-12 px-8 text-base font-semibold shadow-xl hover:shadow-2xl transition-all group/btn"
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    Start for Free
-                    <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
-                  </span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="border-t border-border bg-muted/30 px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                  EduNerve AI
-                </span>
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} EduNerve AI. All rights
-                reserved.
-              </p>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </>
+      <footer className="border-t border-rule">
+        <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-4 px-4 py-8 sm:px-8">
+          <Logo size="sm" />
+          <p className="font-mono text-[11px] text-ink-faint">
+            &copy; {new Date().getFullYear()} EduNerve AI
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 }

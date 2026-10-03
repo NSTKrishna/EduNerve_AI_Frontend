@@ -1,91 +1,97 @@
-import { Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  BookOpen,
-  MessageSquare,
-  Sparkles,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { useEffect, useRef } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { History, LayoutDashboard, LogOut, Mic, Settings } from "lucide-react";
 import { useLearner } from "../../context/LearnerContext";
-import Button from "../common/Button";
+import Logo from "../brand/Logo";
+import { cn } from "../../lib/utils";
 
-const links = [
+export const NAV_LINKS = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "AI Interview", to: "/interviews", icon: MessageSquare },
+  { label: "AI Interview", to: "/interviews", icon: Mic },
+  { label: "History", to: "/history", icon: History },
+  { label: "Settings", to: "/settings", icon: Settings },
 ];
+
+// `/interviews/:id` is a report, which belongs to History; `/interviews` itself is the start page.
+export const isNavActive = (to, pathname) =>
+  to === "/history"
+    ? pathname === "/history" || pathname.startsWith("/interviews/")
+    : pathname === to;
 
 export default function LearningSidebar({ open = false, onClose }) {
   const location = useLocation();
-  const { logout  } = useLearner();
+  const { logout } = useLearner();
+  const panelRef = useRef(null);
 
-  const handleLogout = () => {
-    logout();
-    if (onClose) {
-      onClose();
-    }
-  };
+  // The drawer is modal on mobile: Escape closes it and focus moves in.
+  useEffect(() => {
+    if (!open) return undefined;
+    panelRef.current?.querySelector("a, button")?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   return (
     <>
       {open && (
-        <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-30 bg-ink/45 lg:hidden" onClick={onClose} aria-hidden="true" />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 transform border-r border-border bg-white transition-transform duration-300 ease-in-out lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        ref={panelRef}
+        aria-label="Main navigation"
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-rule bg-sheet",
+          "transition-transform duration-300 ease-out lg:translate-x-0",
+          open ? "translate-x-0" : "-translate-x-full",
+        )}
       >
-        <div className="flex h-full flex-col">
-          {/* Logo Section */}
-          <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-md">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                EduNerve AI
-              </p>
-            </div>
-          </div>
+        <div className="flex h-[72px] shrink-0 items-center border-b border-rule px-6">
+          <Logo size="sm" />
+        </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
-            {links.map((item) => {
-              const isActive = location.pathname === item.to;
-              const Icon = item.icon;
-
+        {/* The margin rule: nav items are written to the right of it, as on the sheet. */}
+        <nav className="relative flex-1 overflow-y-auto py-5 pl-6 pr-4">
+          <span aria-hidden="true" className="absolute inset-y-4 left-6 w-px bg-mark-red/35" />
+          <div className="space-y-0.5 pl-4">
+            {NAV_LINKS.map(({ to, label, icon: Icon }) => {
+              const active = isNavActive(to, location.pathname);
               return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-                  }`}
+                <NavLink
+                  key={to}
+                  to={to}
                   onClick={onClose}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
+                    active ? "bg-sunk font-medium text-ink" : "text-ink-muted hover:bg-sunk/60 hover:text-ink",
+                  )}
                 >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
+                  <Icon
+                    className={cn("h-[18px] w-[18px] shrink-0", active ? "text-mark-red" : "text-ink-faint")}
+                    aria-hidden="true"
+                  />
+                  {label}
+                </NavLink>
               );
             })}
-          </nav>
-
-          <div className="border-t border-border px-6 py-5">
-            <div className="px-4 py-3">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-all mt-1"
-              >
-                <LogOut className="h-5 w-5" />
-                Sign Out
-              </button>
-            </div>
           </div>
+        </nav>
+
+        <div className="shrink-0 border-t border-rule p-4">
+          <button
+            onClick={() => {
+              logout();
+              onClose?.();
+            }}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-ink-muted transition-colors hover:bg-red-wash hover:text-red-ink"
+          >
+            <LogOut className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+            Sign out
+          </button>
         </div>
       </aside>
     </>
