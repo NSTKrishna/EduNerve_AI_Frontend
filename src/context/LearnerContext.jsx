@@ -1,332 +1,184 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from "react";
-import { authAPI } from "../lib/api";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { ApiError, TOKEN_KEY, authAPI, setSessionExpiredHandler, tokenAPI } from "../lib/api";
+
+const PROFILE_CACHE_KEY = "cachedProfile";
+
+const storage = {
+  get: (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set: (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* private mode etc. - the session just won't survive a reload */
+    }
+  },
+  remove: (key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  },
+};
+
+const readCachedProfile = () => {
+  try {
+    return JSON.parse(storage.get(PROFILE_CACHE_KEY));
+  } catch {
+    return null;
+  }
+};
 
 const LearnerContext = createContext(null);
 
 export function LearnerProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authUser, setAuthUser] = useState(null);
-  const [learnerProfile, setLearnerProfile] = useState(null);
-  const [tokens, setTokens] = useState(null);
+  const [user, setUserState] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchTokens = async () => {
-    try {
-      const response = await authAPI.getTokens();
-      console.log("Token response:", response);
-      if (response && response.tokensRemaining !== undefined) {
-        setTokens(response.tokensRemaining);
-      }
-    } catch (error) {
-      console.error("Failed to fetch tokens:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchTokens();
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem("authToken");
-
-      console.log("🔐 Auth check on mount:", {
-        hasToken: !!token,
-      });
-
-      if (token) {
-        try {
-          const response = await authAPI.getProfile();
-          const user = response.success ? response.user : response;
-
-          console.log("✅ Auth check successful:", {
-            userId: user.id,
-            email: user.email,
-          });
-
-          setAuthUser({
-            provider: "credentials",
-            email: user.email,
-            name: user.name,
-            picture: null,
-          });
-
-          const profileData = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar,
-            role: user.role,
-            experience: user.experience,
-            skills: user.skills || [],
-            interviewsPracticed: user.interviews || [],
-          };
-
-          localStorage.setItem("cachedProfile", JSON.stringify(profileData));
-
-          setIsAuthenticated(true);
-          setLearnerProfile(profileData);
-        } catch (error) {
-          console.error("Auth check failed:", error);
-
-          if (
-            error.message?.includes("401") ||
-            error.message?.includes("Invalid token") ||
-            error.message?.includes("Token has expired")
-          ) {
-            console.error("🔒 Token is invalid or expired - clearing session");
-            localStorage.removeItem("authToken");
-            localStorage.removeItem("cachedProfile");
-            setIsAuthenticated(false);
-            setAuthUser(null);
-            setLearnerProfile(null);
-          } else {
-            console.warn(
-              "⚠️ Server temporarily unavailable - keeping user session active",
-            );
-
-            const cachedProfile = localStorage.getItem("cachedProfile");
-
-            if (cachedProfile) {
-              const profile = JSON.parse(cachedProfile);
-              setLearnerProfile(profile);
-              setIsAuthenticated(true);
-
-              setAuthUser({
-                provider: "credentials",
-                email: profile.email,
-                name: profile.name,
-                picture: null,
-              });
-            } else {
-              try {
-                const base64Url = token.split(".")[1];
-                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-                const jsonPayload = decodeURIComponent(
-                  atob(base64)
-                    .split("")
-                    .map(
-                      (c) =>
-                        `%${("00" + c.charCodeAt(0).toString(16)).slice(-2)}`,
-                    )
-                    .join(""),
-                );
-                const decoded = JSON.parse(jsonPayload);
-
-                setAuthUser({
-                  provider: "credentials",
-                  email: decoded.email,
-                  name: decoded.name || "User",
-                  picture: null,
-                });
-                setIsAuthenticated(true);
-                setLearnerProfile({
-                  id: decoded.userId,
-                  name: decoded.name || "User",
-                  email: decoded.email,
-                  avatar: null,
-                  role: null,
-                  experience: null,
-                  skills: [],
-                  interviewsPracticed: [],
-                });
-              } catch (decodeError) {
-                console.error("Failed to decode token:", decodeError);
-                // If we can't decode the token, clear the session
-                localStorage.removeItem("authToken");
-                localStorage.removeItem("cachedProfile");
-                setIsAuthenticated(false);
-                setAuthUser(null);
-                setLearnerProfile(null);
-              }
-            }
-          }
-        }
-      } else {
-        console.log("ℹNo authentication found - user needs to log in");
-      }
-      setLoading(false);
-      console.log("🏁 Auth check complete:", { isAuthenticated: !!token });
-    };
-    checkAuth();
+  const setUser = useCallback((next) => {
+    setUserState(next);
+    if (next) storage.set(PROFILE_CACHE_KEY, JSON.stringify(next));
+    else storage.remove(PROFILE_CACHE_KEY);
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const response = await authAPI.login(email, password);
-      localStorage.setItem("authToken", response.token);
+  const logout = useCallback(() => {
+    storage.remove(TOKEN_KEY);
+    setUser(null);
+  }, [setUser]);
 
-      const authUserData = {
-        provider: "credentials",
-        email: response.user.email,
-        name: response.user.name,
-        picture: null,
-      };
+  useEffect(() => {
+    setSessionExpiredHandler(logout);
+    return () => setSessionExpiredHandler(null);
+  }, [logout]);
 
-      const profileData = {
-        id: response.user.id,
-        name: response.user.name,
-        email: response.user.email,
-        role: response.user.role,
-        experience: response.user.experience,
-        skills: response.user.skills || [],
-        interviewsPracticed: [],
-      };
+  // Restore the session on page load.
+  useEffect(() => {
+    let cancelled = false;
 
-      localStorage.setItem("cachedProfile", JSON.stringify(profileData));
-
-      setIsAuthenticated(true);
-      setAuthUser(authUserData);
-      setLearnerProfile(profileData);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Login failed:", error);
-      return { success: false, error: error.message };
+    async function restore() {
+      if (!storage.get(TOKEN_KEY)) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const { user: profile } = await authAPI.getProfile();
+        if (!cancelled) setUser(profile);
+      } catch (error) {
+        if (cancelled) return;
+        if (error instanceof ApiError && error.status === 0) {
+          // Server unreachable: keep the user signed in with the last known profile.
+          const cached = readCachedProfile();
+          if (cached) setUserState(cached);
+          else storage.remove(TOKEN_KEY);
+        } else {
+          logout(); // 401 (handled globally) or the account no longer exists
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-  };
 
-  const signup = async (name, email, password, role, experience, skills) => {
-    try {
-      const response = await authAPI.register(
-        name,
-        email,
-        password,
-        role,
-        experience,
-        skills,
-      );
-      console.log("Signup response:", response);
-      console.log("Saving token:", response.token);
-      localStorage.setItem("authToken", response.token);
+    restore();
+    return () => {
+      cancelled = true;
+    };
+  }, [logout, setUser]);
 
-      const savedToken = localStorage.getItem("authToken");
-      console.log("Token saved successfully:", !!savedToken);
-
-      const authUserData = {
-        provider: "credentials",
-        email: response.user.email,
-        name: response.user.name,
-        picture: null,
-      };
-
-      const profileData = {
-        id: response.user.id,
-        name: response.user.name,
-        email: response.user.email,
-        role: response.user.role,
-        experience: response.user.experience,
-        skills: response.user.skills || [],
-        interviewsPracticed: [],
-      };
-
-      localStorage.setItem("cachedProfile", JSON.stringify(profileData));
-
-      setIsAuthenticated(true);
-      setAuthUser(authUserData);
-      setLearnerProfile(profileData);
-
-      return { success: true };
-    } catch (error) {
-      console.error("Signup failed:", error);
-      return { success: false, error: error.message };
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("cachedProfile");
-    setIsAuthenticated(false);
-    setAuthUser(null);
-    setLearnerProfile(null);
-  };
-
-  const setProfile = (profileData) => {
-    setLearnerProfile((prev) => {
-      const updatedProfile = {
-        ...prev,
-        ...profileData,
-        name: profileData?.name || prev?.name || authUser?.name || "",
-        email: profileData?.email || prev?.email || authUser?.email || "",
-        avatar:
-          profileData?.avatar || prev?.avatar || authUser?.picture || null,
-        role: profileData?.role || prev?.role || "",
-        experience: profileData?.experience || prev?.experience || "",
-        skills: profileData?.skills || prev?.skills || [],
-      };
-
-      return updatedProfile;
-    });
-  };
-
-  const saveInterviewResult = async (interviewData) => {
-    setLearnerProfile((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        interviewsPracticed: [
-          ...(prev.interviewsPracticed || []),
-          {
-            ...interviewData,
-            date: new Date().toISOString(),
-          },
-        ],
-      };
-    });
-  };
-
-  const refreshProfile = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-
-      const response = await authAPI.getProfile();
-      const user = response.success ? response.user : response;
-
-      setLearnerProfile({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
-        experience: user.experience,
-        skills: user.skills || [],
-        interviewsPracticed: user.interviews || [],
-      });
-    } catch (error) {
-      console.error("Error refreshing profile:", error);
-    }
-  };
-
-  const value = {
-    isAuthenticated,
-    authUser,
-    learnerProfile,
-    tokens,
-    loading,
-    login,
-    signup,
-    logout,
-    setProfile,
-    // completeQuiz removed
-    saveInterviewResult,
-    refreshProfile,
-    fetchTokens,
-    setTokens,
-  };
-
-  return (
-    <LearnerContext.Provider value={value}>{children}</LearnerContext.Provider>
+  const startSession = useCallback(
+    ({ user: profile, token }) => {
+      storage.set(TOKEN_KEY, token);
+      setUser(profile);
+    },
+    [setUser],
   );
+
+  // Auth actions resolve to { success, error } so forms can show the message without try/catch.
+  const login = useCallback(
+    async (email, password) => {
+      try {
+        startSession(await authAPI.login({ email, password }));
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    [startSession],
+  );
+
+  const signup = useCallback(
+    async ({ name, email, password }) => {
+      try {
+        startSession(await authAPI.register({ name, email, password }));
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    [startSession],
+  );
+
+  const updateProfile = useCallback(
+    async (changes) => {
+      const { user: updated } = await authAPI.updateProfile(changes);
+      setUser(updated);
+      return updated;
+    },
+    [setUser],
+  );
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const { user: profile } = await authAPI.getProfile();
+      setUser(profile);
+    } catch {
+      /* a stale profile is fine; session expiry is handled globally */
+    }
+  }, [setUser]);
+
+  /** Apply a balance we already know (e.g. from /start-interview) without another request. */
+  const setTokens = useCallback(
+    (tokens) => setUserState((prev) => (prev ? { ...prev, tokens } : prev)),
+    [],
+  );
+
+  const refreshTokens = useCallback(async () => {
+    try {
+      const { tokensRemaining } = await tokenAPI.getBalance();
+      setTokens(tokensRemaining);
+    } catch {
+      /* the chip keeps showing the last known balance */
+    }
+  }, [setTokens]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      loading,
+      tokens: user ? user.tokens : null,
+      login,
+      signup,
+      logout,
+      updateProfile,
+      refreshUser,
+      setTokens,
+      refreshTokens,
+    }),
+    [user, loading, login, signup, logout, updateProfile, refreshUser, setTokens, refreshTokens],
+  );
+
+  return <LearnerContext.Provider value={value}>{children}</LearnerContext.Provider>;
 }
 
 export function useLearner() {
   const context = useContext(LearnerContext);
-  if (!context) {
-    throw new Error("useLearner must be used within LearnerProvider");
-  }
+  if (!context) throw new Error("useLearner must be used within LearnerProvider");
   return context;
 }
