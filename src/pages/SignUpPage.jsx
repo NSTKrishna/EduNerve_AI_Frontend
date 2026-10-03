@@ -1,174 +1,98 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLearner } from "../context/LearnerContext";
+import AuthLayout from "../components/layout/AuthLayout";
 import Input from "../components/common/Input";
+import PasswordInput from "../components/common/PasswordInput";
+import FormError from "../components/common/FormError";
 import Button from "../components/common/Button";
-import { Sparkles, ArrowLeft, Mail, Lock, User } from "lucide-react";
+
+const MIN_PASSWORD = 8;
 
 export default function SignUpPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [touchedPassword, setTouchedPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { signup, isAuthenticated } = useLearner();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard", { replace: true });
-    }
+    if (isAuthenticated) navigate("/dashboard", { replace: true });
   }, [isAuthenticated, navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Shown as the user types rather than only after a failed submit.
+  const tooShort = touchedPassword && form.password.length > 0 && form.password.length < MIN_PASSWORD;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError("");
+
+    if (!form.name || !form.email || !form.password) {
+      setError("Fill in every field to create your account.");
+      return;
+    }
+    if (form.password.length < MIN_PASSWORD) {
+      setError(`Your password needs at least ${MIN_PASSWORD} characters.`);
+      return;
+    }
+
     setLoading(true);
-
-    if (!name || !email || !password) {
-      setError("Please fill in all fields");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      setLoading(false);
-      return;
-    }
-
-    const result = await signup(name, email, password, "", "", []);
+    const result = await signup(form);
     setLoading(false);
 
-    if (result.success) {
-      navigate("/dashboard");
-    } else {
-      setError(result.error || "Sign up failed. Please try again.");
-    }
+    if (result.success) navigate("/dashboard");
+    else setError(result.error || "We couldn't create your account. Please try again.");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-12">
-      {/* Back to Home Button */}
-      <Link
-        to="/"
-        className="fixed top-6 left-6 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group"
-      >
-        <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-        Back to Home
-      </Link>
-
-      <div className="w-full max-w-md">
-        {/* Logo & Header */}
-        <div className="flex flex-col items-center text-center mb-8 space-y-4">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-              EduNerve AI
-            </span>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Your first interviews are on us"
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link to="/login" className="text-ink underline underline-offset-4 hover:text-mark-red">
+            Sign in
           </Link>
-
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              Create Your Account
-            </h1>
-            <p className="text-muted-foreground">
-              Start your learning journey today
-            </p>
-          </div>
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-white border border-border rounded-2xl p-8 shadow-xl">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                Full Name
-              </label>
-              <Input
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                Email Address
-              </label>
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Lock className="h-4 w-4 text-muted-foreground" />
-                Password
-              </label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11"
-              />
-              <p className="text-xs text-muted-foreground">
-                Must be at least 6 characters
-              </p>
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-              disabled={loading}
-            >
-              {loading ? "Creating Account..." : "Create Account"}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition-colors"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          By signing up, you agree to our{" "}
-          <a href="#" className="underline hover:text-foreground">
-            Terms of Service
-          </a>{" "}
-          and{" "}
-          <a href="#" className="underline hover:text-foreground">
-            Privacy Policy
-          </a>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <Input
+          label="Full name"
+          autoComplete="name"
+          placeholder="Jane Doe"
+          maxLength={80}
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+        <Input
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        <PasswordInput
+          label="Password"
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          hint={`At least ${MIN_PASSWORD} characters.`}
+          error={tooShort ? `At least ${MIN_PASSWORD} characters.` : undefined}
+          value={form.password}
+          onBlur={() => setTouchedPassword(true)}
+          onChange={(e) => {
+            setTouchedPassword(true);
+            setForm({ ...form, password: e.target.value });
+          }}
+        />
+        <FormError message={error} />
+        <Button type="submit" size="lg" loading={loading} className="w-full">
+          {loading ? "Creating account..." : "Create account"}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

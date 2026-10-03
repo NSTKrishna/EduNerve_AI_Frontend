@@ -1,136 +1,350 @@
 @import "tailwindcss";
-/* @import 'tw-animate-css'; */
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * THE WORKED EXAMPLE
+ *
+ * Your interview is work shown and then marked up in the margin — not a score
+ * card handed down. The ground is worksheet paper; judgement arrives as a
+ * margin mark in annotation colour. Hairlines divide. Nothing is fenced by a
+ * drop-shadowed card.
+ *
+ * Four annotation marks, each with a fixed meaning:
+ *   red    a correction — what went wrong, what to fix
+ *   green  a tick — what was right
+ *   ochre  a caution — in progress, incomplete, careful
+ *   blue   a note — neutral information, the teacher's aside
+ *
+ * Each mark comes in four parts: the saturated ink, a wash to fill a whole
+ * region, the ink that sits legibly on that wash, and the rule that bounds it.
+ */
+
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --paper: #fbf7ef;
+  --sheet: #fffdf8;
+  --sunk: #f3ede0;
+
+  --ink: #1a1612;
+  --ink-muted: #645b4e;
+  --ink-faint: #776d5d;
+
+  --rule: #e4dbca;
+  --rule-strong: #cbbfa8;
+
+  --mark-red: #b8311a;
+  --mark-green: #16803c;
+  --mark-ochre: #8f6512;
+  --mark-blue: #3a4fb8;
+
+  --red-wash: #fbede9;
+  --red-ink: #8e2415;
+  --red-rule: #f0d3cb;
+
+  --green-wash: #e9f4ec;
+  --green-ink: #0e5a2a;
+  --green-rule: #cbe4d3;
+
+  --ochre-wash: #faf2df;
+  --ochre-ink: #70500c;
+  --ochre-rule: #ebdcb4;
+
+  --blue-wash: #ebedf9;
+  --blue-ink: #27357f;
+  --blue-rule: #d2d7ee;
+
+  /* Primary action is the boxed answer: ink fill, paper text. */
+  --primary: var(--ink);
+  --primary-ink: var(--sheet);
+  --primary-hover: #312922;
+
+  --focus: #3a4fb8;
+
+  /* Validated against the sheet ground for normal vision and CVD.
+     Series order is fixed: overall, technical, problem solving, communication. */
+  --chart-1: #c8371f;
+  --chart-2: #16803c;
+  --chart-3: #3a4fb8;
+  --chart-4: #b5801f;
+
+  --radius: 14px;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Night desk, not an inverted sheet: the paper warmth stays, the lamp goes out. */
+  --paper: #17140f;
+  --sheet: #201c16;
+  --sunk: #2a251d;
+
+  --ink: #f5efe2;
+  --ink-muted: #a89c88;
+  --ink-faint: #938876;
+
+  --rule: #39322a;
+  --rule-strong: #4e4539;
+
+  --mark-red: #e3705a;
+  --mark-green: #3fb89c;
+  --mark-ochre: #d4a03c;
+  --mark-blue: #8690f0;
+
+  --red-wash: #2e1b16;
+  --red-ink: #f0a896;
+  --red-rule: #4a2b22;
+
+  --green-wash: #132a24;
+  --green-ink: #85d8c0;
+  --green-rule: #1f4238;
+
+  --ochre-wash: #2b2112;
+  --ochre-ink: #e8c47e;
+  --ochre-rule: #453620;
+
+  --blue-wash: #1c1d33;
+  --blue-ink: #b3b8f5;
+  --blue-rule: #2e3050;
+
+  /* Chalk on slate. */
+  --primary: var(--ink);
+  --primary-ink: #17140f;
+  --primary-hover: #ffffff;
+
+  --focus: #8690f0;
+
+  --chart-1: #dc6048;
+  --chart-2: #2fa98f;
+  --chart-3: #6b7be8;
+  --chart-4: #b5841c;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
+  /* Display carries the world's character; Geist is the Operate workhorse;
+     mono is reserved for measurement — scores, counts, session numbers. */
+  --font-display: "Bricolage Grotesque", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-sunk: var(--sunk);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+
+  --color-mark-red: var(--mark-red);
+  --color-mark-green: var(--mark-green);
+  --color-mark-ochre: var(--mark-ochre);
+  --color-mark-blue: var(--mark-blue);
+
+  --color-red-wash: var(--red-wash);
+  --color-red-ink: var(--red-ink);
+  --color-red-rule: var(--red-rule);
+
+  --color-green-wash: var(--green-wash);
+  --color-green-ink: var(--green-ink);
+  --color-green-rule: var(--green-rule);
+
+  --color-ochre-wash: var(--ochre-wash);
+  --color-ochre-ink: var(--ochre-ink);
+  --color-ochre-rule: var(--ochre-rule);
+
+  --color-blue-wash: var(--blue-wash);
+  --color-blue-ink: var(--blue-ink);
+  --color-blue-rule: var(--blue-rule);
+
   --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-hover: var(--primary-hover);
+
+  --color-focus: var(--focus);
+
+  /* Semantic aliases onto the marks: a tick is green, a caution ochre, a
+     correction red. lib/format.js and its tests speak in these names. */
+  --color-success: var(--mark-green);
+  --color-warning: var(--mark-ochre);
+  --color-danger: var(--mark-red);
+  --color-muted-foreground: var(--ink-muted);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-xl: 20px;
+  --radius-2xl: 26px;
+
+  --text-display: 4.5rem;
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.035em;
+  --text-figure: 3.5rem;
+  --text-figure--line-height: 1;
+  --text-figure--letter-spacing: -0.03em;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-rule;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
-    background-size: 40px 40px;
-    background-image: linear-gradient(
-        to right,
-        color-mix(in srgb, var(--border) 50%, transparent) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        color-mix(in srgb, var(--border) 50%, transparent) 1px,
-        transparent 1px
-      );
+    @apply bg-paper text-ink antialiased;
+    font-synthesis-weight: none;
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  /* Measurement is set in mono and lines up in columns. */
+  .tabular,
+  [data-figure] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /*
+   * Browser surfaces. These ship with defaults belonging to no design system,
+   * so the world claims them too.
+   */
+  ::selection {
+    background: var(--ochre-wash);
+    color: var(--ink);
+  }
+
+  :root {
+    accent-color: var(--mark-blue);
+    caret-color: var(--mark-red);
+    scrollbar-color: var(--rule-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--rule-strong);
+    border: 3px solid var(--paper);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-faint);
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  /* No border-radius here: setting one would reshape the focused element's own
+     corners. The outline already follows whatever radius the element has. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+ * The exercise-book margin: one vertical rule in correction red, the line every
+ * worked answer is written to the right of.
+ */
+@utility margin-rule {
+  position: relative;
+}
+
+@utility margin-rule-line {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--mark-red) 40%, transparent);
+}
+
+/* A mark drawn beside the thing it refers to, settling rather than sliding. */
+@keyframes mark-settle {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@utility mark-in {
+  animation: mark-settle 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* A waiting indicator in the world's own grammar: ink darkening and easing
+   back, never a stock pulse. */
+@keyframes ink-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@utility ink-breathe {
+  animation: ink-breathe 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* A stroke being drawn and lifted: the waiting indicator in a world whose
+   motion grammar is ink settling, not a rotating spinner. */
+@keyframes ink-draw {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  45% {
+    clip-path: inset(0 0 0 0);
+  }
+  55% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+@utility ink-draw {
+  animation: ink-draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
