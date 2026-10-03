@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Lightbulb, Target } from "lucide-react";
 import { useAsync } from "../hooks/useAsync";
@@ -30,7 +31,7 @@ function Annotation({ icon: Icon, mark, title, items }) {
     <section className="relative pl-4">
       <span aria-hidden="true" className={`absolute inset-y-0.5 left-0 w-px ${tone.rule}`} />
       <h3 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-ink-muted">
-        <Icon className={`h-3.5 w-3.5 ${tone.icon}`} aria-hidden="true" />
+        {createElement(Icon, { className: `h-3.5 w-3.5 ${tone.icon}`, "aria-hidden": true })}
         {title}
       </h3>
       <ul className="mt-2.5 space-y-2">

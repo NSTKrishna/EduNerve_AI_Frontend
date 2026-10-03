@@ -1,22 +1,10 @@
-import { useEffect, useRef } from "react";
+import { createElement, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { History, LayoutDashboard, LogOut, Mic, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useLearner } from "../../context/LearnerContext";
 import Logo from "../brand/Logo";
 import { cn } from "../../lib/utils";
-
-export const NAV_LINKS = [
-  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "AI Interview", to: "/interviews", icon: Mic },
-  { label: "History", to: "/history", icon: History },
-  { label: "Settings", to: "/settings", icon: Settings },
-];
-
-// `/interviews/:id` is a report, which belongs to History; `/interviews` itself is the start page.
-export const isNavActive = (to, pathname) =>
-  to === "/history"
-    ? pathname === "/history" || pathname.startsWith("/interviews/")
-    : pathname === to;
+import { NAV_LINKS, isNavActive } from "./navigation";
 
 export default function LearningSidebar({ open = false, onClose }) {
   const location = useLocation();
@@ -70,10 +58,10 @@ export default function LearningSidebar({ open = false, onClose }) {
                     active ? "bg-sunk font-medium text-ink" : "text-ink-muted hover:bg-sunk/60 hover:text-ink",
                   )}
                 >
-                  <Icon
-                    className={cn("h-[18px] w-[18px] shrink-0", active ? "text-mark-red" : "text-ink-faint")}
-                    aria-hidden="true"
-                  />
+                  {createElement(Icon, {
+                    className: cn("h-[18px] w-[18px] shrink-0", active ? "text-mark-red" : "text-ink-faint"),
+                    "aria-hidden": true,
+                  })}
                   {label}
                 </NavLink>
               );
